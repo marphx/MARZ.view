@@ -267,6 +267,26 @@
       color: rgba(234, 255, 251, 0.54);
     }
 
+    .tinyBugButton {
+      border: 1px solid rgba(255, 138, 40, 0.34);
+      border-radius: 999px;
+      color: rgba(255, 244, 221, 0.92);
+      background: rgba(255, 138, 40, 0.10);
+      padding: 8px 12px;
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+    }
+
+    .qualityBadge {
+      font-size: 0.72rem;
+      color: rgba(234, 255, 251, 0.62);
+      text-align: center;
+      line-height: 1.35;
+      margin-top: 4px;
+    }
+
     .primaryButton, .ghostButton, .miniButton {
       border: 1px solid rgba(87, 255, 231, 0.34);
       border-radius: 999px;
@@ -365,7 +385,7 @@
       bottom: calc(12px + var(--safe-bottom));
       z-index: 15;
       width: min(430px, calc(100vw - 24px));
-      max-height: min(74vh, 740px);
+      max-height: min(calc(100dvh - 24px - var(--safe-top) - var(--safe-bottom)), 740px);
       overflow: hidden;
       border: 1px solid rgba(87, 255, 231, 0.24);
       border-radius: var(--radius);
@@ -398,10 +418,13 @@
     }
 
     .dockBody {
-      padding: 12px;
-      overflow: auto;
-      max-height: calc(min(74vh, 740px) - 58px);
+      padding: 12px 12px calc(34px + var(--safe-bottom));
+      overflow-y: auto;
+      overflow-x: hidden;
+      max-height: calc(min(calc(100dvh - 24px - var(--safe-top) - var(--safe-bottom)), 740px) - 58px);
       scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
     }
 
     .panelTabs {
@@ -540,6 +563,35 @@
       font-size: 0.8rem;
     }
 
+    .keyGroup {
+      grid-column: 1 / -1;
+      margin-top: 10px;
+      padding: 7px 9px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 900;
+    }
+
+    .cat-nav { color: #57ffe7; border-color: rgba(87,255,231,0.38); }
+    .cat-effects { color: #57ff8a; border-color: rgba(87,255,138,0.38); }
+    .cat-camera { color: #78a7ff; border-color: rgba(120,167,255,0.38); }
+    .cat-capture { color: #ff8a28; border-color: rgba(255,138,40,0.38); }
+    .cat-system { color: #ff6de9; border-color: rgba(255,109,233,0.38); }
+
+    .keyGroup.cat-nav { background: rgba(87,255,231,0.08); }
+    .keyGroup.cat-effects { background: rgba(87,255,138,0.08); }
+    .keyGroup.cat-camera { background: rgba(120,167,255,0.08); }
+    .keyGroup.cat-capture { background: rgba(255,138,40,0.08); }
+    .keyGroup.cat-system { background: rgba(255,109,233,0.08); }
+
+    .keyCombo.cat-nav kbd { border-color: rgba(87,255,231,0.58); background: rgba(87,255,231,0.13); }
+    .keyCombo.cat-effects kbd { border-color: rgba(87,255,138,0.58); background: rgba(87,255,138,0.13); }
+    .keyCombo.cat-camera kbd { border-color: rgba(120,167,255,0.58); background: rgba(120,167,255,0.13); }
+    .keyCombo.cat-capture kbd { border-color: rgba(255,138,40,0.58); background: rgba(255,138,40,0.13); }
+    .keyCombo.cat-system kbd { border-color: rgba(255,109,233,0.58); background: rgba(255,109,233,0.13); }
+
     kbd {
       display: inline-flex;
       align-items: center;
@@ -642,8 +694,20 @@
       .homeCard { min-height: 84vh; }
       .designer { right: 22px; bottom: 22px; }
       .homeCopy { padding-bottom: 44px; }
-      #controlDock { max-height: 64vh; }
+      #controlDock {
+        left: 8px;
+        right: 8px;
+        bottom: calc(8px + var(--safe-bottom));
+        width: calc(100vw - 16px);
+        max-height: calc(100dvh - 16px - var(--safe-top) - var(--safe-bottom));
+      }
+      #controlDock.collapsed { transform: translateY(calc(100% - 58px)); }
+      .dockBody {
+        max-height: calc(100dvh - 74px - var(--safe-top) - var(--safe-bottom));
+        padding-bottom: calc(60px + var(--safe-bottom));
+      }
       .panelTabs { grid-template-columns: repeat(2, 1fr); }
+      .toggleRow { grid-template-columns: 1fr; }
       .statusPill { display: none; }
       .brandBugText { display: none; }
     }
@@ -690,6 +754,7 @@
               <button id="startButton" class="primaryButton">Start Camera + Mic</button>
               <button id="demoButton" class="ghostButton">Open Demo Visualizer</button>
               <button id="loaderPreviewButton" class="ghostButton">Replay Loader</button>
+              <button id="homeBugButton" class="tinyBugButton" type="button">Report a Bug</button>
             </div>
             <p class="tinyNote">For iPhone/iPad, start from a tap so Safari can unlock camera, mic, and audio analysis. MP4 export appears when the browser supports MediaRecorder MP4; otherwise the app records a WebM fallback.</p>
           </div>
@@ -707,7 +772,9 @@
       <div class="dockHeader">
         <strong>Controls</strong>
         <div>
+          <button id="keysButton" class="miniButton" title="Keyboard shortcuts">Keys</button>
           <button id="randomizeButton" class="miniButton" title="Randomize look">Dice</button>
+          <button id="appBugButton" class="miniButton" title="Report a bug">Bug</button>
           <button id="collapseButton" class="miniButton" title="Collapse controls">Hide</button>
         </div>
       </div>
@@ -728,7 +795,9 @@
           <div class="toggleRow" aria-label="Effect layer switches">
             <button id="primaryToggleButton" class="effectToggle on" type="button">Primary On</button>
             <button id="secondaryToggleButton" class="effectToggle on" type="button">Secondary On</button>
+            <button id="normalQualityButton" class="effectToggle on" type="button">Normal Sharp</button>
           </div>
+          <div class="qualityBadge">Normal mode uses a sharp camera render by default. Tap Normal Sharp to switch to the lower-bitrate visual pipeline.</div>
 
           <div class="controlRow">
             <div><label for="primaryMix">Primary mix</label><small>Main visual strength.</small></div><span class="valueReadout" id="primaryMixVal"></span>
@@ -827,22 +896,31 @@
     <aside id="cheatSheet" class="hidden" aria-label="Keyboard cheat sheet">
       <h3>Keyboard cheat sheet</h3>
       <div class="keyGrid">
-        <div><kbd>K</kbd></div><div>Show / hide this cheat sheet.</div>
-        <div><kbd>E</kbd> <kbd>V</kbd> <kbd>X</kbd> <kbd>C</kbd></div><div>Open Effects, Visual, Export, or Camera panel.</div>
-        <div><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></div><div>Adjust the focused or most recently touched slider. Hold Shift for larger jumps.</div>
-        <div><kbd>1</kbd>–<kbd>0</kbd></div><div>Change primary effect. <kbd>1</kbd> is Normal Camera.</div>
-        <div><kbd>Shift</kbd> + <kbd>1</kbd>–<kbd>0</kbd></div><div>Change secondary effect. <kbd>Shift</kbd> + <kbd>1</kbd> is Normal Camera.</div>
-        <div><kbd>[</kbd></div><div>Primary effect layer on / off.</div>
-        <div><kbd>]</kbd></div><div>Secondary effect layer on / off.</div>
-        <div><kbd>R</kbd></div><div>Start / stop recording.</div>
-        <div><kbd>S</kbd></div><div>Save a PNG snapshot.</div>
-        <div><kbd>B</kbd></div><div>Randomize settings.</div>
-        <div><kbd>P</kbd></div><div>Show / hide the control dock.</div>
-        <div><kbd>Space</kbd></div><div>Pause / resume visual engine.</div>
-        <div><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>C</kbd></div><div>Copy the current preset JSON.</div>
-        <div><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>V</kbd></div><div>Paste a preset JSON from clipboard, if available.</div>
-        <div><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd></div><div>Undo setting change.</div>
-        <div><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Y</kbd></div><div>Redo setting change.</div>
+        <div class="keyGroup cat-nav">Navigation + panels</div>
+        <div class="keyCombo cat-nav"><kbd>K</kbd></div><div>Show / hide this color-coded shortcut guide.</div>
+        <div class="keyCombo cat-nav"><kbd>E</kbd> <kbd>V</kbd> <kbd>X</kbd> <kbd>C</kbd></div><div>Open Effects, Visual, Export, or Camera panel.</div>
+        <div class="keyCombo cat-nav"><kbd>P</kbd></div><div>Collapse / expand the controls.</div>
+
+        <div class="keyGroup cat-effects">Effects + layers</div>
+        <div class="keyCombo cat-effects"><kbd>1</kbd>–<kbd>0</kbd></div><div>Change primary effect. <kbd>1</kbd> is Normal Camera.</div>
+        <div class="keyCombo cat-effects"><kbd>Shift</kbd> + <kbd>1</kbd>–<kbd>0</kbd></div><div>Change secondary effect. <kbd>Shift</kbd> + <kbd>1</kbd> is Normal Camera.</div>
+        <div class="keyCombo cat-effects"><kbd>[</kbd></div><div>Primary effect layer on / off. When both layers are off, MARZview falls back to Normal Camera.</div>
+        <div class="keyCombo cat-effects"><kbd>]</kbd></div><div>Secondary effect layer on / off. When both layers are off, MARZview falls back to Normal Camera.</div>
+        <div class="keyCombo cat-effects"><kbd>B</kbd></div><div>Randomize settings.</div>
+
+        <div class="keyGroup cat-camera">Camera + view</div>
+        <div class="keyCombo cat-camera"><kbd>Arrows</kbd></div><div>Adjust the focused slider. Hold Shift for larger jumps.</div>
+        <div class="keyCombo cat-camera"><kbd>N</kbd></div><div>Toggle Normal Camera quality: sharp clean source or lower-bitrate source view.</div>
+
+        <div class="keyGroup cat-capture">Capture</div>
+        <div class="keyCombo cat-capture"><kbd>R</kbd></div><div>Start / stop recording.</div>
+        <div class="keyCombo cat-capture"><kbd>S</kbd></div><div>Save a PNG snapshot.</div>
+
+        <div class="keyGroup cat-system">System</div>
+        <div class="keyCombo cat-system"><kbd>Space</kbd></div><div>Pause / resume visual engine.</div>
+        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>C</kbd></div><div>Copy the current preset JSON.</div>
+        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>V</kbd></div><div>Paste preset JSON.</div>
+        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd></div><div>Undo. Add Shift for redo on Mac-style keyboards.</div>
       </div>
     </aside>
 
@@ -896,6 +974,7 @@
         secondaryEffect: "edgeTrails",
         primaryEnabled: true,
         secondaryEnabled: true,
+        normalSharp: true,
         primaryMix: 1,
         secondaryMix: 0.62,
         intensity: 0.82,
@@ -1049,6 +1128,7 @@
       function updateEffectToggleButtons() {
         const primary = document.getElementById("primaryToggleButton");
         const secondary = document.getElementById("secondaryToggleButton");
+        const quality = document.getElementById("normalQualityButton");
         if (primary) {
           primary.textContent = settings.primaryEnabled ? "Primary On" : "Primary Off";
           primary.classList.toggle("on", !!settings.primaryEnabled);
@@ -1059,12 +1139,23 @@
           secondary.classList.toggle("on", !!settings.secondaryEnabled);
           secondary.classList.toggle("off", !settings.secondaryEnabled);
         }
+        if (quality) {
+          quality.textContent = settings.normalSharp ? "Normal Sharp" : "Normal Lo-Fi";
+          quality.classList.toggle("on", !!settings.normalSharp);
+          quality.classList.toggle("off", !settings.normalSharp);
+        }
       }
 
       function toggleEffectLayer(layer) {
         const key = layer === "secondary" ? "secondaryEnabled" : "primaryEnabled";
         applySetting(key, !settings[key]);
-        showToast(`${layer === "secondary" ? "Secondary" : "Primary"} layer ${settings[key] ? "on" : "off"}.`);
+        const bothOff = !settings.primaryEnabled && !settings.secondaryEnabled;
+        showToast(`${layer === "secondary" ? "Secondary" : "Primary"} layer ${settings[key] ? "on" : "off"}${bothOff ? ". Normal Camera fallback active." : "."}`);
+      }
+
+      function toggleNormalQuality() {
+        applySetting("normalSharp", !settings.normalSharp);
+        showToast(settings.normalSharp ? "Normal Camera: sharp source." : "Normal Camera: lower-bitrate source.");
       }
 
       function formatValue(key, value) {
@@ -1149,6 +1240,23 @@
         showToast("New visual stack generated.");
       }
 
+      function reportBug() {
+        const report = [
+          "MARZview Bug Report",
+          `Time: ${new Date().toISOString()}`,
+          `Screen: ${window.innerWidth}x${window.innerHeight}`,
+          `Device pixel ratio: ${window.devicePixelRatio || 1}`,
+          `User agent: ${navigator.userAgent}`,
+          "",
+          "What happened?",
+          ""
+        ].join("\n");
+        navigator.clipboard?.writeText(report).catch(() => {});
+        const mailto = `mailto:?subject=${encodeURIComponent("MARZview Bug Report")}&body=${encodeURIComponent(report)}`;
+        window.location.href = mailto;
+        showToast("Bug report template opened. A copy was also attempted to clipboard.");
+      }
+
       function setupControls() {
         populateEffects();
         updateControlsFromSettings();
@@ -1199,6 +1307,10 @@
         document.getElementById("collapseButton").addEventListener("click", toggleControls);
         document.getElementById("primaryToggleButton").addEventListener("click", () => toggleEffectLayer("primary"));
         document.getElementById("secondaryToggleButton").addEventListener("click", () => toggleEffectLayer("secondary"));
+        document.getElementById("normalQualityButton").addEventListener("click", toggleNormalQuality);
+        document.getElementById("keysButton").addEventListener("click", () => cheatSheet.classList.toggle("hidden"));
+        document.getElementById("homeBugButton").addEventListener("click", reportBug);
+        document.getElementById("appBugButton").addEventListener("click", reportBug);
         document.getElementById("randomizeButton").addEventListener("click", randomizeSettings);
         document.getElementById("recordButton").addEventListener("click", toggleRecording);
         document.getElementById("snapshotButton").addEventListener("click", saveSnapshot);
@@ -1388,8 +1500,6 @@
             sHeight = vw / canvasRatio;
             sy = (vh - sHeight) / 2;
           }
-          sourceCtx.translate(sw, 0);
-          sourceCtx.scale(-1, 1);
           sourceCtx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, sw, sh);
         } else {
           drawDemoSource(sourceCtx, sw, sh, now);
@@ -1450,6 +1560,11 @@
         frameCount++;
         updateAudio(now);
         const frame = prepareSourceFrame(now);
+        const bothOff = !settings.primaryEnabled && !settings.secondaryEnabled;
+        if (bothOff) {
+          drawNormalCamera(frame, 1);
+          return;
+        }
         drawBackgroundFade(frame);
         drawCameraGhost(frame);
         if (settings.primaryEnabled) drawEffect(settings.primaryEffect, frame, settings.primaryMix);
@@ -1512,7 +1627,9 @@
         ctx.save();
         ctx.globalCompositeOperation = "source-over";
         ctx.globalAlpha = clamp(mix);
-        ctx.filter = `saturate(${1 + settings.colorDrift * 0.35}) contrast(${1 + settings.edgeBoost * 0.18})`;
+        ctx.imageSmoothingEnabled = !!settings.normalSharp;
+        ctx.imageSmoothingQuality = settings.normalSharp ? "high" : "low";
+        ctx.filter = settings.normalSharp ? "none" : `saturate(${1 + settings.colorDrift * 0.35}) contrast(${1 + settings.edgeBoost * 0.18})`;
         ctx.drawImage(sourceCanvas, 0, 0, frame.cw, frame.ch);
         ctx.filter = "none";
         ctx.restore();
@@ -1989,6 +2106,7 @@
             case "r": toggleRecording(); event.preventDefault(); break;
             case "s": saveSnapshot(); event.preventDefault(); break;
             case "b": randomizeSettings(); event.preventDefault(); break;
+            case "n": toggleNormalQuality(); event.preventDefault(); break;
             case "[": toggleEffectLayer("primary"); event.preventDefault(); break;
             case "]": toggleEffectLayer("secondary"); event.preventDefault(); break;
             case "p": toggleControls(); event.preventDefault(); break;
