@@ -835,6 +835,10 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
+    .buttonGrid.four {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
     #cheatSheet {
       position: fixed;
       right: 12px;
@@ -947,6 +951,39 @@
       display: none;
     }
 
+    #mapGuideToggleButton {
+      position: fixed;
+      top: calc(12px + var(--safe-top));
+      left: 12px;
+      z-index: 95;
+      width: 17px;
+      height: 17px;
+      padding: 0;
+      border-radius: 999px;
+      border: 1px solid rgba(20, 90, 180, 0.45);
+      background: rgba(5, 30, 85, 1);
+      color: transparent;
+      text-indent: -9999px;
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(30, 90, 220, 0.18);
+      animation: mapGuidePulse 2.4s ease-in-out infinite;
+    }
+
+    #mapGuideToggleButton.hidden {
+      display: none;
+    }
+
+    #mapGuideToggleButton.guidesOff {
+      border-color: rgba(255, 138, 40, 0.36);
+      box-shadow: 0 0 14px rgba(255, 138, 40, 0.18);
+    }
+
+    @keyframes mapGuidePulse {
+      0%, 100% { opacity: 0.02; }
+      50% { opacity: 0.15; }
+    }
+
     #toast {
       position: fixed;
       left: 50%;
@@ -1037,9 +1074,11 @@
       #controlDock {
         left: 8px;
         right: 8px;
+        top: calc(8px + var(--safe-top));
         bottom: calc(8px + var(--safe-bottom));
         width: calc(100vw - 16px);
-        max-height: calc(100dvh - 16px - var(--safe-top) - var(--safe-bottom));
+        max-height: none;
+        height: auto;
       }
       #controlDock.collapsed { transform: translateY(calc(100% - 58px)); }
       .dockBody {
@@ -1155,7 +1194,7 @@
               <li>Turn mapping on if needed and choose a shape or use <strong>Custom</strong>.</li>
               <li>Drag the frame, drag corner points, or add/remove custom points.</li>
               <li>Use <strong>Mask</strong> to hide everything outside the shape, or <strong>Warp</strong> to contort the visual inside the shape.</li>
-              <li>Use the content controls to zoom, pan, and squish the image inside the frame.</li>
+              <li>Use the content controls to zoom, pan, and squish the image inside the frame. Tap <strong>Refresh Map</strong> if you ever want to force the latest contour/stretch placement to snap into view.</li>
               <li>Use <strong>Trace Subject</strong>, <strong>Tight Trace</strong>, or <strong>Box Trace</strong> to detect a dominant subject and create a more precise frame automatically.</li>
             </ol>
           </div>
@@ -1166,7 +1205,7 @@
               <li>Upload photos, videos, and GIFs into the piano-style media slots.</li>
               <li>GIFs loop automatically and are held until loaded so black placeholder frames are less likely to appear.</li>
               <li><strong>Add Source Frame</strong> duplicates the currently active live source or media source into another mapped frame.</li>
-              <li><strong>Frame 1–4</strong> buttons select which mapped frame you are editing.</li>
+              <li><strong>Frame 1–4</strong> buttons select which mapped frame you are editing.</li><li><strong>Frame visuals</strong> lets each mapped frame use its own primary and secondary visual modes. Use this selectively for performance when running several frames at once.</li>
               <li><strong>Swap Frames</strong> rotates the assigned sources between active mapped frames while preserving each frame’s dimensions and shape.</li>
             </ul>
           </div>
@@ -1187,7 +1226,7 @@
             <div class="guideGrid">
               <div class="guideChip"><strong>K</strong>Show / hide the keyboard guide.</div>
               <div class="guideChip"><strong>A</strong>Open map mode. <strong>Shift + A</strong> traces the dominant subject.</div>
-              <div class="guideChip"><strong>D + Arrows</strong>Move the selected mapping point.</div>
+              <div class="guideChip"><strong>D + Arrows</strong>Move the selected mapping point. Hold to accelerate.</div><div class="guideChip"><strong>M + Arrows</strong>Move the whole mapped frame with precision acceleration.</div><div class="guideChip"><strong>O / Delete</strong>Add or remove custom mapping points from the keyboard.</div>
               <div class="guideChip"><strong>V + Arrows</strong>Pan the content inside the mapped frame.</div>
               <div class="guideChip"><strong>X + Arrows</strong>Squish / stretch the content.</div>
               <div class="guideChip"><strong>Z + +/-</strong>Zoom the content inside the frame.</div>
@@ -1312,9 +1351,10 @@
         
         <div id="mapPanel" class="panelPage">
           <div class="sectionTitle">Projection map <span>drag the frame on screen</span></div>
-          <div class="buttonGrid three">
+          <div class="buttonGrid four">
             <button id="mapEnabledButton" class="ghostButton">Map Off</button>
             <button id="mapEditButton" class="ghostButton active">Edit Frame</button>
+            <button id="refreshMapButton" class="ghostButton">Refresh Map</button>
             <button id="mapResetButton" class="ghostButton">Reset</button>
           </div>
           <div class="sectionTitle" style="margin-top:14px;">Subject trace <span>capture frame to map</span></div>
@@ -1358,6 +1398,17 @@
             <button class="ghostButton cloneSlotButton" data-clone-slot="3" type="button">Clone 4</button>
           </div>
           <div class="mapHint" id="cloneStatusText">Add up to four live camera clone frames, then select one to edit its own map, zoom, pan, and squish settings.</div>
+          <div class="sectionTitle" style="margin-top:12px;">Frame visuals <span>per mapped frame</span></div>
+          <div class="buttonGrid three">
+            <button id="frameFxToggleButton" class="ghostButton">Frame FX Off</button>
+            <button id="frameFxUseCurrentButton" class="ghostButton">Use Current FX</button>
+            <button id="frameFxClearButton" class="ghostButton">Clear Frame FX</button>
+          </div>
+          <label for="framePrimarySelect" class="selectLabel">Frame Primary Visual</label>
+          <select id="framePrimarySelect"></select>
+          <label for="frameSecondarySelect" class="selectLabel">Frame Secondary Visual</label>
+          <select id="frameSecondarySelect"></select>
+          <div class="mapHint" id="frameFxStatusText">Select a mapped frame, then assign its own primary and secondary visual modes. Keep this off for maximum performance.</div>
           <div class="pianoSlots" id="mediaSlotButtons">
             <button class="slotButton white loaded active" data-slot="0" type="button">1</button>
             <button class="slotButton black" data-slot="1" type="button">2</button>
@@ -1477,16 +1528,21 @@
         <div class="keyCombo cat-map"><kbd>A</kbd></div><div>Open the Map panel and snap into keyboard mapping mode.</div>
         <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>A</kbd></div><div>Trace the dominant subject in the current frame and apply it as an editable custom mapping shape.</div>
         <div class="keyCombo cat-map"><kbd>Arrows</kbd></div><div>Step through mapping points when no modifier is held.</div>
-        <div class="keyCombo cat-map"><kbd>D</kbd> + <kbd>Arrows</kbd></div><div>Move / crop the selected mapping point.</div>
+        <div class="keyCombo cat-map"><kbd>D</kbd> + <kbd>Arrows</kbd></div><div>Move / crop the selected mapping point with precision. Hold longer to accelerate.</div>
+        <div class="keyCombo cat-map"><kbd>M</kbd> + <kbd>Arrows</kbd></div><div>Move the whole contoured frame as one piece. Hold longer to accelerate.</div>
+        <div class="keyCombo cat-map"><kbd>O</kbd></div><div>Add a new editable point after the selected point.</div>
+        <div class="keyCombo cat-map"><kbd>Delete</kbd>/<kbd>Backspace</kbd></div><div>Remove the selected added point. Corner points stay protected.</div>
         <div class="keyCombo cat-map"><kbd>V</kbd> + <kbd>Arrows</kbd></div><div>Pan the active photo / video / camera feed inside the mapped frame.</div>
         <div class="keyCombo cat-map"><kbd>X</kbd> + <kbd>Arrows</kbd></div><div>Squish or stretch the active media inside the mapped frame.</div>
         <div class="keyCombo cat-map"><kbd>Z</kbd> + <kbd>+</kbd>/<kbd>-</kbd></div><div>Zoom the active media inside the mapped frame.</div>
         <div class="keyCombo cat-map"><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></div><div>Cycle through mapped frames while in map mode.</div>
+        <div class="keyCombo cat-map"><kbd>\</kbd></div><div>Hide/show mapping outlines, dotted borders, and editable point dots without changing the mapped frames.</div>
         <div class="keyCombo cat-map"><kbd>T</kbd></div><div>Swap / rotate the assigned uploaded photos, GIFs, videos, or live feeds across active mapped frames while preserving frame sizes.</div>
         <div class="keyCombo cat-map"><kbd>Pinch</kbd></div><div>Pinch on the mapping canvas to zoom the selected media or mapped frame.</div>
         <div class="keyCombo cat-map"><kbd>F</kbd></div><div>Request true fullscreen and reduce the interface to the small hide/show dot.</div>
         <div class="keyCombo cat-map"><kbd>Piano Slots</kbd></div><div>On-screen media keys switch between custom photo/video/GIF slots for casting and editing.</div>
         <div class="keyCombo cat-map"><kbd>Clone 1–4</kbd></div><div>Use the on-screen clone buttons to add and edit multiple live camera frames at once.</div>
+        <div class="keyCombo cat-map"><kbd>Frame FX</kbd></div><div>On-screen controls assign primary/secondary visual modes to the selected mapped frame.</div>
         <div class="keyCombo cat-map"><kbd>Normal</kbd></div><div>On-screen reset returns the app to a smooth normal camera view with effects off.</div>
 
         <div class="keyGroup cat-capture">Capture</div>
@@ -1503,6 +1559,7 @@
       </div>
     </aside>
 
+    <button id="mapGuideToggleButton" class="hidden" type="button" aria-label="Hide mapping outlines and points">Map guides</button>
     <button id="masterHideButton" class="hidden" type="button" aria-label="Show interface">UI</button>
     <div id="toast" role="status" aria-live="polite"></div>
   </div>
@@ -1600,9 +1657,11 @@
       let keyboardMapMode = false;
       let keyboardMapSelectedIndex = 0;
       let keyboardMapCropHeld = false;
+      let keyboardMapMoveHeld = false;
       let keyboardMapPanHeld = false;
       let keyboardMapSquishHeld = false;
       let keyboardZoomHeld = false;
+      let keyboardArrowHold = { key: "", start: 0, last: 0 };
       let activeShortcutSetting = null;
       let activeShortcutKey = null;
       let isRunning = false;
@@ -1610,6 +1669,7 @@
       let demoMode = false;
       let masterUIHidden = false;
       let mapEditorVisible = false;
+      let mapGuidesVisible = true;
       let activeSourceMode = "camera";
       let activeMediaSlot = 0;
       let activeCloneSlot = 0;
@@ -1642,6 +1702,10 @@
       const scratchCanvas = document.getElementById("scratchCanvas");
       const traceCanvas = document.createElement("canvas");
       const traceCtx = traceCanvas.getContext("2d", { willReadFrequently: true });
+      const frameFxCanvas = document.createElement("canvas");
+      const frameFxCtx = frameFxCanvas.getContext("2d", { willReadFrequently: true });
+      const frameFxWorkCanvas = document.createElement("canvas");
+      const frameFxWorkCtx = frameFxWorkCanvas.getContext("2d", { willReadFrequently: true });
 
       const sliderShortcutMap = {
         q: "primaryMix",
@@ -1689,6 +1753,7 @@
       const controlDock = document.getElementById("controlDock");
       const cheatSheet = document.getElementById("cheatSheet");
       const masterHideButton = document.getElementById("masterHideButton");
+      const mapGuideToggleButton = document.getElementById("mapGuideToggleButton");
       const toast = document.getElementById("toast");
       const statusPill = document.getElementById("statusPill");
       const topBar = document.getElementById("topBar");
@@ -2001,13 +2066,19 @@
       function populateEffects() {
         const primary = document.getElementById("primarySelect");
         const secondary = document.getElementById("secondarySelect");
+        const framePrimary = document.getElementById("framePrimarySelect");
+        const frameSecondary = document.getElementById("frameSecondarySelect");
         primary.innerHTML = "";
         secondary.innerHTML = "";
+        if (framePrimary) framePrimary.innerHTML = "";
+        if (frameSecondary) frameSecondary.innerHTML = "";
         EFFECTS.forEach(effect => {
           const opt1 = new Option(effect.name, effect.id);
           const opt2 = new Option(effect.name, effect.id);
           primary.add(opt1);
           secondary.add(opt2);
+          if (framePrimary) framePrimary.add(new Option(effect.name, effect.id));
+          if (frameSecondary) frameSecondary.add(new Option(effect.name, effect.id));
         });
       }
 
@@ -2062,6 +2133,7 @@
         updateEffectToggleButtons();
         updateMapButtons();
         updateCloneButtons();
+        updateFrameFxControls();
       }
 
       function updateEffectToggleButtons() {
@@ -2170,6 +2242,114 @@
         updateMediaStatusText();
       }
 
+      function getDefaultFrameVisualState() {
+        return {
+          enabled: false,
+          primaryEffect: "normal",
+          secondaryEffect: "normal",
+          primaryMix: 1,
+          secondaryMix: 0,
+          intensity: 0.65,
+          glow: 0.55,
+          texture: 0.45,
+          bitrate: 0.55,
+          trail: 0.35,
+          edgeBoost: 0.55,
+          colorDrift: 0.35
+        };
+      }
+
+      function getActiveFrameSlot() {
+        if (activeSourceMode === "clone" && cameraCloneSlots[activeCloneSlot]) return cameraCloneSlots[activeCloneSlot];
+        return null;
+      }
+
+      function ensureFrameVisualState(slot = getActiveFrameSlot()) {
+        if (!slot) return null;
+        if (!slot.visualState) slot.visualState = getDefaultFrameVisualState();
+        return slot.visualState;
+      }
+
+      function updateFrameFxControls() {
+        const slot = getActiveFrameSlot();
+        const status = document.getElementById("frameFxStatusText");
+        const toggle = document.getElementById("frameFxToggleButton");
+        const primary = document.getElementById("framePrimarySelect");
+        const secondary = document.getElementById("frameSecondarySelect");
+        const state = slot?.visualState || getDefaultFrameVisualState();
+        if (toggle) {
+          toggle.textContent = state.enabled ? "Frame FX On" : "Frame FX Off";
+          toggle.classList.toggle("active", !!state.enabled);
+        }
+        if (primary) primary.value = state.primaryEffect || "normal";
+        if (secondary) secondary.value = state.secondaryEffect || "normal";
+        if (status) {
+          status.textContent = slot
+            ? `Frame ${activeCloneSlot + 1} visuals: ${state.enabled ? "ON" : "OFF"}. Primary ${state.primaryEffect || "normal"}, secondary ${state.secondaryEffect || "normal"}.`
+            : "Select a mapped frame first. Frame FX stay off unless you assign them, which helps keep multiple frames responsive.";
+        }
+      }
+
+      function setFrameFxEnabled(enabled = null) {
+        const slot = getActiveFrameSlot();
+        if (!slot) return showToast("Select a mapped frame first.");
+        pushMapHistory();
+        const state = ensureFrameVisualState(slot);
+        state.enabled = enabled === null ? !state.enabled : !!enabled;
+        updateFrameFxControls();
+        syncActiveProjectionState();
+        refreshMapView();
+        showToast(state.enabled ? "Frame visual modes enabled." : "Frame visual modes disabled.");
+      }
+
+      function applyCurrentFxToFrame() {
+        const slot = getActiveFrameSlot();
+        if (!slot) return showToast("Select a mapped frame first.");
+        pushMapHistory();
+        slot.visualState = {
+          enabled: true,
+          primaryEffect: settings.primaryEffect,
+          secondaryEffect: settings.secondaryEffect,
+          primaryMix: settings.primaryMix,
+          secondaryMix: settings.secondaryMix,
+          intensity: settings.intensity,
+          glow: settings.glow,
+          texture: settings.texture,
+          bitrate: settings.bitrate,
+          trail: settings.trail,
+          edgeBoost: settings.edgeBoost,
+          colorDrift: settings.colorDrift
+        };
+        updateFrameFxControls();
+        syncActiveProjectionState();
+        refreshMapView();
+        showToast(`Current visual modes assigned to frame ${activeCloneSlot + 1}.`);
+      }
+
+      function clearFrameFx() {
+        const slot = getActiveFrameSlot();
+        if (!slot) return showToast("Select a mapped frame first.");
+        pushMapHistory();
+        slot.visualState = getDefaultFrameVisualState();
+        updateFrameFxControls();
+        syncActiveProjectionState();
+        refreshMapView();
+        showToast("Frame visual modes cleared.");
+      }
+
+      function setFrameFxSelect(which, value) {
+        const slot = getActiveFrameSlot();
+        if (!slot) return showToast("Select a mapped frame first.");
+        pushMapHistory();
+        const state = ensureFrameVisualState(slot);
+        state.enabled = true;
+        if (which === "primary") state.primaryEffect = value;
+        if (which === "secondary") state.secondaryEffect = value;
+        updateFrameFxControls();
+        syncActiveProjectionState();
+        refreshMapView();
+      }
+
       function updateCloneButtons() {
         const cloneStatus = document.getElementById("cloneStatusText");
         document.querySelectorAll(".cloneSlotButton[data-clone-slot]").forEach(button => {
@@ -2192,6 +2372,7 @@
             ? `${active.length} mapped frame${active.length === 1 ? '' : 's'} active. Use Swap Frames to rotate their sources while preserving each frame's dimensions.`
             : 'Add up to four mapped frames, then assign them live camera or uploaded media and edit each one separately.';
         }
+        updateFrameFxControls();
       }
 
       function getDefaultCloneProjection(index = 0) {
@@ -2258,6 +2439,7 @@
         applyProjectionStatePayload(cameraCloneSlots[index].projectionState || getDefaultCloneProjection(index));
         updateMediaSlotButtons();
         updateCloneButtons();
+        updateFrameFxControls();
         showToast(`Editing mapped frame ${index + 1}.`);
       }
 
@@ -3154,6 +3336,7 @@
         document.getElementById("resetNormalButton").addEventListener("click", normalizeToDefaultCameraView);
         document.getElementById("hideUIButton").addEventListener("click", toggleMasterUI);
         masterHideButton.addEventListener("click", toggleMasterUI);
+        mapGuideToggleButton.addEventListener("click", toggleMapGuides);
         document.getElementById("homeHelpButton").addEventListener("click", () => showGuide("live"));
         document.getElementById("guideHomeButton").addEventListener("click", showHome);
         document.getElementById("guideLaunchButton").addEventListener("click", launchFromGuide);
@@ -3161,7 +3344,8 @@
         document.getElementById("appBugButton").addEventListener("click", reportBug);
         document.getElementById("mapEnabledButton").addEventListener("click", toggleMapEnabled);
         document.getElementById("mapEditButton").addEventListener("click", () => toggleMapEditor());
-        document.getElementById("mapResetButton").addEventListener("click", () => { resetMapShape(); showToast("Map frame reset."); });
+        document.getElementById("refreshMapButton").addEventListener("click", refreshMapView);
+        document.getElementById("mapResetButton").addEventListener("click", () => { resetMapShape(); refreshMapView(); showToast("Map frame reset."); });
         document.getElementById("traceSubjectButton").addEventListener("click", () => traceDominantSubject("balanced"));
         document.getElementById("traceTightButton").addEventListener("click", () => traceDominantSubject("tight"));
         document.getElementById("traceBoxButton").addEventListener("click", () => traceDominantSubject("box"));
@@ -3182,6 +3366,11 @@
         document.getElementById("useCloneBaseButton").addEventListener("click", useBaseSourceForEditing);
         document.getElementById("swapFramesButton").addEventListener("click", swapMappedFrameSources);
         document.getElementById("clearCloneButton").addEventListener("click", clearSelectedClone);
+        document.getElementById("frameFxToggleButton").addEventListener("click", () => setFrameFxEnabled());
+        document.getElementById("frameFxUseCurrentButton").addEventListener("click", applyCurrentFxToFrame);
+        document.getElementById("frameFxClearButton").addEventListener("click", clearFrameFx);
+        document.getElementById("framePrimarySelect").addEventListener("change", event => setFrameFxSelect("primary", event.target.value));
+        document.getElementById("frameSecondarySelect").addEventListener("change", event => setFrameFxSelect("secondary", event.target.value));
         document.getElementById("mediaUpload").addEventListener("change", event => handleMediaUpload(event.target.files));
         document.querySelectorAll(".slotButton[data-slot]").forEach(button => button.addEventListener("click", () => activateMediaSlot(Number(button.dataset.slot))));
         document.querySelectorAll(".cloneSlotButton[data-clone-slot]").forEach(button => button.addEventListener("click", () => activateCameraClone(Number(button.dataset.cloneSlot))));
@@ -3259,14 +3448,18 @@
         renderMapOverlay();
         masterUIHidden = false;
         masterHideButton.classList.add("hidden");
+        mapGuideToggleButton.classList.add("hidden");
         updateMasterHideButton();
+        updateMapGuideToggleButton();
       }
 
       function showVisualizer() {
         homeScreen.classList.add("hidden");
         guideScreen.classList.add("hidden");
         masterHideButton.classList.remove("hidden");
+        mapGuideToggleButton.classList.remove("hidden");
         updateMasterHideButton();
+        updateMapGuideToggleButton();
         if (masterUIHidden) {
           controlDock.classList.add("hidden");
           topBar.classList.add("hidden");
@@ -3290,8 +3483,10 @@
         cornerHint.classList.add("hidden");
         cheatSheet.classList.add("hidden");
         masterHideButton.classList.add("hidden");
+        mapGuideToggleButton.classList.add("hidden");
         masterUIHidden = false;
         updateMasterHideButton();
+        updateMapGuideToggleButton();
       }
 
       function launchFromGuide() {
@@ -3518,6 +3713,7 @@
           drawVignette(frame);
         }
         if (settings.mapEnabled) applyMapTransform();
+        syncActiveProjectionState();
         renderCameraCloneLayers();
         renderMapOverlay();
       }
@@ -3583,8 +3779,111 @@
         context.closePath();
       }
 
+      function sourceDimensions(source) {
+        return {
+          w: source.videoWidth || source.naturalWidth || source.width || canvas.width,
+          h: source.videoHeight || source.naturalHeight || source.height || canvas.height
+        };
+      }
+
+      function renderFrameVisualSource(source, visualState) {
+        if (!source || !visualState || !visualState.enabled) return source;
+        const maxW = Math.min(canvas.width, 720);
+        const ratio = canvas.height / Math.max(1, canvas.width);
+        const w = Math.max(160, Math.round(maxW));
+        const h = Math.max(120, Math.round(maxW * ratio));
+        frameFxCanvas.width = w;
+        frameFxCanvas.height = h;
+        frameFxWorkCanvas.width = w;
+        frameFxWorkCanvas.height = h;
+
+        const dims = sourceDimensions(source);
+        const sourceRatio = dims.w / Math.max(1, dims.h);
+        const canvasRatio = w / h;
+        let sx = 0, sy = 0, sw = dims.w, sh = dims.h;
+        if (sourceRatio > canvasRatio) {
+          sw = dims.h * canvasRatio;
+          sx = (dims.w - sw) / 2;
+        } else {
+          sh = dims.w / canvasRatio;
+          sy = (dims.h - sh) / 2;
+        }
+
+        frameFxCtx.setTransform(1, 0, 0, 1, 0, 0);
+        frameFxCtx.clearRect(0, 0, w, h);
+        frameFxCtx.imageSmoothingEnabled = true;
+        frameFxCtx.drawImage(source, sx, sy, sw, sh, 0, 0, w, h);
+
+        const primary = visualState.primaryEffect || "normal";
+        const secondary = visualState.secondaryEffect || "normal";
+        const primaryMix = clamp(Number(visualState.primaryMix ?? 1));
+        const secondaryMix = clamp(Number(visualState.secondaryMix ?? 0));
+        const glow = clamp(Number(visualState.glow ?? 0.55));
+        const intensity = clamp(Number(visualState.intensity ?? 0.65));
+        const texture = clamp(Number(visualState.texture ?? 0.45));
+        const edgeBoost = clamp(Number(visualState.edgeBoost ?? 0.55));
+        const colorDrift = clamp(Number(visualState.colorDrift ?? 0.35));
+        const bitrate = clamp(Number(visualState.bitrate ?? 0.55));
+
+        function drawFastEffect(effectId, mix) {
+          if (mix <= 0.01 || effectId === "normal") return;
+          frameFxWorkCtx.setTransform(1, 0, 0, 1, 0, 0);
+          frameFxWorkCtx.clearRect(0, 0, w, h);
+          frameFxWorkCtx.drawImage(frameFxCanvas, 0, 0, w, h);
+          frameFxCtx.save();
+          frameFxCtx.globalAlpha = clamp(mix);
+          frameFxCtx.globalCompositeOperation = "screen";
+
+          if (effectId === "tealBits" || effectId === "constellation" || effectId === "gridMelt") {
+            const step = Math.max(4, Math.round(18 - bitrate * 12));
+            frameFxCtx.imageSmoothingEnabled = false;
+            frameFxCtx.filter = `saturate(${1.3 + intensity}) contrast(${1.05 + edgeBoost * 0.5})`;
+            for (let y = 0; y < h; y += step) {
+              for (let x = 0; x < w; x += step) {
+                if (((x + y + frameCount * 3) / step | 0) % 3 === 0) {
+                  frameFxCtx.fillStyle = effectId === "gridMelt" ? "rgba(87,255,231,0.28)" : "rgba(87,255,231,0.42)";
+                  frameFxCtx.shadowColor = "rgba(87,255,231,0.55)";
+                  frameFxCtx.shadowBlur = 8 * glow;
+                  frameFxCtx.fillRect(x, y, Math.max(2, step * 0.38), Math.max(2, step * 0.38));
+                }
+              }
+            }
+            frameFxCtx.drawImage(frameFxWorkCanvas, 0, 0, w / step, h / step, 0, 0, w, h);
+          } else if (effectId === "edgeTrails" || effectId === "echoGlass") {
+            frameFxCtx.filter = `contrast(${1.2 + edgeBoost}) brightness(${1 + glow * 0.35}) saturate(${1.2 + intensity})`;
+            frameFxCtx.drawImage(frameFxWorkCanvas, -2 - texture * 7, 0, w, h);
+            frameFxCtx.drawImage(frameFxWorkCanvas, 2 + texture * 7, 0, w, h);
+          } else if (effectId === "prismGhost" || effectId === "chromaticVapor") {
+            const drift = 3 + colorDrift * 14;
+            frameFxCtx.globalCompositeOperation = "lighter";
+            frameFxCtx.filter = `hue-rotate(${40 + colorDrift * 80}deg) saturate(${1.4 + intensity})`;
+            frameFxCtx.drawImage(frameFxWorkCanvas, -drift, 0, w, h);
+            frameFxCtx.filter = `hue-rotate(${-50 - colorDrift * 60}deg) saturate(${1.4 + intensity})`;
+            frameFxCtx.drawImage(frameFxWorkCanvas, drift, 0, w, h);
+          } else if (effectId === "plasmaScan" || effectId === "auroraWash" || effectId === "solarDream") {
+            const grad = frameFxCtx.createLinearGradient(0, 0, w, h);
+            grad.addColorStop(0, effectId === "solarDream" ? "rgba(255,138,40,0.34)" : "rgba(87,255,231,0.28)");
+            grad.addColorStop(0.5, "rgba(195,110,255,0.24)");
+            grad.addColorStop(1, "rgba(255,90,110,0.22)");
+            frameFxCtx.fillStyle = grad;
+            frameFxCtx.fillRect(0, 0, w, h);
+            frameFxCtx.filter = `blur(${2 + glow * 5}px) saturate(${1.2 + intensity})`;
+            frameFxCtx.drawImage(frameFxWorkCanvas, 0, 0, w, h);
+          }
+          frameFxCtx.restore();
+          frameFxCtx.filter = "none";
+          frameFxCtx.globalAlpha = 1;
+          frameFxCtx.globalCompositeOperation = "source-over";
+        }
+
+        drawFastEffect(primary, primaryMix);
+        drawFastEffect(secondary, secondaryMix);
+        return frameFxCanvas;
+      }
+
       function renderProjectionInstance(source, state, clearCanvas = false) {
         if (!source || !state || !state.mapEnabled) return;
+        source = renderFrameVisualSource(source, state.visualState || null);
         const points = getProjectionPointsPixelsForState(state);
         const box = getProjectionBBoxPixelsForState(state);
         const zoom = clamp(Number(state.mapContentZoom || 1), 0.25, 4);
@@ -3607,12 +3906,57 @@
         ctx.restore();
       }
 
+      function syncActiveProjectionState() {
+        if (activeSourceMode === "clone" && cameraCloneSlots[activeCloneSlot]) {
+          cameraCloneSlots[activeCloneSlot].projectionState = {
+            ...getProjectionStatePayload(),
+            customPoints: JSON.parse(JSON.stringify(mapCustomPoints || []))
+          };
+          cameraCloneSlots[activeCloneSlot].visualState = cameraCloneSlots[activeCloneSlot].visualState || getDefaultFrameVisualState();
+        } else if (activeSourceMode === "slot" && mediaSlots[activeMediaSlot]) {
+          mediaSlots[activeMediaSlot].projectionState = {
+            ...getProjectionStatePayload(),
+            customPoints: JSON.parse(JSON.stringify(mapCustomPoints || []))
+          };
+        } else if (activeSourceMode === "camera") {
+          cameraProjectionState = {
+            ...getProjectionStatePayload(),
+            customPoints: JSON.parse(JSON.stringify(mapCustomPoints || []))
+          };
+        }
+      }
+
+      function refreshMapView() {
+        syncActiveProjectionState();
+        renderMapOverlay();
+        lastFrameTime = 0;
+        requestAnimationFrame(time => {
+          if (isRunning && !isPaused) drawFrame(time);
+          else renderMapOverlay();
+        });
+        showToast("Map view refreshed.");
+      }
+
+      function updateMapGuideToggleButton() {
+        mapGuideToggleButton.classList.toggle("guidesOff", !mapGuidesVisible);
+        mapGuideToggleButton.setAttribute("aria-label", mapGuidesVisible ? "Hide mapping outlines and points" : "Show mapping outlines and points");
+        mapGuideToggleButton.title = mapGuidesVisible ? "Hide map guides" : "Show map guides";
+      }
+
+      function toggleMapGuides() {
+        mapGuidesVisible = !mapGuidesVisible;
+        updateMapGuideToggleButton();
+        renderMapOverlay();
+        showToast(mapGuidesVisible ? "Map outlines and dots visible." : "Map outlines and dots hidden.");
+      }
+
       function renderCameraCloneLayers() {
-        cameraCloneSlots.forEach(slot => {
+        cameraCloneSlots.forEach((slot, index) => {
           if (!slot || !slot.projectionState || !slot.projectionState.mapEnabled) return;
+          if (activeSourceMode === "clone" && activeCloneSlot === index) return;
           const sourceEl = getCloneSourceElement(slot);
           if (!sourceEl) return;
-          renderProjectionInstance(sourceEl, slot.projectionState, false);
+          renderProjectionInstance(sourceEl, { ...slot.projectionState, visualState: slot.visualState }, false);
         });
       }
 
@@ -3623,7 +3967,17 @@
         scratchCtx.clearRect(0, 0, scratchCanvas.width, scratchCanvas.height);
         scratchCtx.drawImage(canvas, 0, 0);
         ctx.setTransform(1, 0, 0, 1, 0, 0);
-        renderProjectionInstance(scratchCanvas, { ...getProjectionStatePayload(), customPoints: JSON.parse(JSON.stringify(mapCustomPoints || [])) }, true);
+        const activeSlot = getActiveFrameSlot();
+        if (activeSlot && activeSlot.visualState && activeSlot.visualState.enabled) {
+          const sourceEl = getCloneSourceElement(activeSlot);
+          renderProjectionInstance(sourceEl || scratchCanvas, {
+            ...getProjectionStatePayload(),
+            customPoints: JSON.parse(JSON.stringify(mapCustomPoints || [])),
+            visualState: activeSlot.visualState
+          }, true);
+        } else {
+          renderProjectionInstance(scratchCanvas, { ...getProjectionStatePayload(), customPoints: JSON.parse(JSON.stringify(mapCustomPoints || [])) }, true);
+        }
       }
 
       function getMapHandlePoints() {
@@ -3659,6 +4013,71 @@
         const count = getMapHandleCount();
         keyboardMapSelectedIndex = (keyboardMapSelectedIndex + direction + count) % count;
         renderMapOverlay();
+      }
+
+      function getKeyboardArrowStep(key, base = 0.75) {
+        const now = performance.now();
+        if (keyboardArrowHold.key !== key || now - keyboardArrowHold.last > 320) {
+          keyboardArrowHold = { key, start: now, last: now };
+        } else {
+          keyboardArrowHold.last = now;
+        }
+        const held = now - keyboardArrowHold.start;
+        const accel = 1 + Math.min(9, Math.pow(held / 520, 1.35));
+        return base * accel;
+      }
+
+      function moveWholeMapFrame(dx, dy) {
+        pushMapHistory();
+        moveMapShape(dx, dy);
+        syncActiveProjectionState();
+        renderMapOverlay();
+      }
+
+      function ensureKeyboardCustomShape() {
+        if (settings.mapShape === "custom" && mapCustomPoints.length >= 4) return;
+        const points = getMapHandlePoints();
+        mapCustomPoints = points.map((point, index) => ({
+          x: clamp(point.x / canvas.width, 0, 1),
+          y: clamp(point.y / canvas.height, 0, 1),
+          fixed: index < 4
+        }));
+        settings.mapShape = "custom";
+        keyboardMapSelectedIndex = Math.min(keyboardMapSelectedIndex, mapCustomPoints.length - 1);
+      }
+
+      function keyboardAddMapPoint() {
+        pushMapHistory();
+        ensureKeyboardCustomShape();
+        const points = getMapPointsPixels();
+        const index = ((keyboardMapSelectedIndex % points.length) + points.length) % points.length;
+        const current = points[index];
+        const next = points[(index + 1) % points.length];
+        const created = {
+          x: clamp(((current.x + next.x) / 2) / canvas.width, 0, 1),
+          y: clamp(((current.y + next.y) / 2) / canvas.height, 0, 1),
+          fixed: false
+        };
+        mapCustomPoints.splice(index + 1, 0, created);
+        keyboardMapSelectedIndex = index + 1;
+        syncActiveProjectionState();
+        updateControlsFromSettings();
+        renderMapOverlay();
+        showToast("Mapping point added.");
+      }
+
+      function keyboardRemoveMapPoint() {
+        ensureKeyboardCustomShape();
+        if (mapCustomPoints.length <= 4) return showToast("Keep at least four corner points.");
+        const index = ((keyboardMapSelectedIndex % mapCustomPoints.length) + mapCustomPoints.length) % mapCustomPoints.length;
+        if (index < 4 || mapCustomPoints[index]?.fixed) return showToast("Corner points stay locked. Select an added point to remove.");
+        pushMapHistory();
+        mapCustomPoints.splice(index, 1);
+        keyboardMapSelectedIndex = Math.min(index, mapCustomPoints.length - 1);
+        syncActiveProjectionState();
+        updateControlsFromSettings();
+        renderMapOverlay();
+        showToast("Mapping point removed.");
       }
 
       function nudgeKeyboardMapPoint(dx, dy) {
@@ -3703,6 +4122,7 @@
         mapCtx.setTransform(1, 0, 0, 1, 0, 0);
         mapCtx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
         if (!(settings.mapEnabled || mapEditorVisible)) return;
+        if (!mapGuidesVisible) return;
         cameraCloneSlots.forEach((slot, index) => {
           if (!slot || !slot.projectionState || !slot.projectionState.mapEnabled) return;
           if (activeSourceMode === 'clone' && activeCloneSlot === index) return;
@@ -3924,6 +4344,7 @@
             if (!mapDrag || !mapDrag.historyPushed) { pushMapHistory(); if (mapDrag) mapDrag.historyPushed = true; }
             settings.mapContentZoom = clamp(mapPinch.zoom * (nextDistance / mapPinch.distance), 0.25, 4);
             updateControlsFromSettings();
+            syncActiveProjectionState();
             renderMapOverlay();
             return;
           }
@@ -3934,10 +4355,12 @@
           if (mapDrag.mode === 'point' && mapDrag.moved) {
             if (!mapDrag.historyPushed) { pushMapHistory(); mapDrag.historyPushed = true; }
             dragMapHandle(mapDrag.index, point);
+            syncActiveProjectionState();
             renderMapOverlay();
           } else if (mapDrag.mode === 'move') {
             if (!mapDrag.historyPushed) { pushMapHistory(); mapDrag.historyPushed = true; }
             moveMapShape(dx, dy);
+            syncActiveProjectionState();
             mapDrag.start = point;
             renderMapOverlay();
           }
@@ -4526,6 +4949,24 @@
             return;
           }
 
+          if (keyboardMapMode && key === 'm' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            keyboardMapMoveHeld = true;
+            event.preventDefault();
+            return;
+          }
+
+          if (keyboardMapMode && (key === 'o') && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            event.preventDefault();
+            keyboardAddMapPoint();
+            return;
+          }
+
+          if (keyboardMapMode && (key === 'backspace' || key === 'delete') && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            event.preventDefault();
+            keyboardRemoveMapPoint();
+            return;
+          }
+
           if (keyboardMapMode && key === 'v' && !event.ctrlKey && !event.metaKey && !event.altKey) {
             keyboardMapPanHeld = true;
             event.preventDefault();
@@ -4564,6 +5005,12 @@
             return;
           }
 
+          if (key === '\\' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            event.preventDefault();
+            toggleMapGuides();
+            return;
+          }
+
           if (keyboardMapMode && key === 't' && !event.ctrlKey && !event.metaKey && !event.altKey) {
             event.preventDefault();
             swapMappedFrameSources();
@@ -4585,24 +5032,32 @@
 
           if (keyboardMapMode && ["arrowup", "arrowright", "arrowdown", "arrowleft"].includes(key)) {
             event.preventDefault();
-            const step = event.shiftKey ? 10 : 4;
+            const pixelStep = getKeyboardArrowStep(key, event.shiftKey ? 3.5 : 0.65);
+            const fineUnit = getKeyboardArrowStep(key, event.shiftKey ? 0.022 : 0.004);
             if (keyboardMapCropHeld) {
               let dx = 0, dy = 0;
-              if (key === 'arrowleft') dx = -step;
-              if (key === 'arrowright') dx = step;
-              if (key === 'arrowup') dy = -step;
-              if (key === 'arrowdown') dy = step;
+              if (key === 'arrowleft') dx = -pixelStep;
+              if (key === 'arrowright') dx = pixelStep;
+              if (key === 'arrowup') dy = -pixelStep;
+              if (key === 'arrowdown') dy = pixelStep;
               nudgeKeyboardMapPoint(dx, dy);
+            } else if (keyboardMapMoveHeld) {
+              let dx = 0, dy = 0;
+              if (key === 'arrowleft') dx = -pixelStep;
+              if (key === 'arrowright') dx = pixelStep;
+              if (key === 'arrowup') dy = -pixelStep;
+              if (key === 'arrowdown') dy = pixelStep;
+              moveWholeMapFrame(dx, dy);
             } else if (keyboardMapPanHeld) {
               let dx = 0, dy = 0;
-              if (key === 'arrowleft') dx = -0.02 * (event.shiftKey ? 2 : 1);
-              if (key === 'arrowright') dx = 0.02 * (event.shiftKey ? 2 : 1);
-              if (key === 'arrowup') dy = -0.02 * (event.shiftKey ? 2 : 1);
-              if (key === 'arrowdown') dy = 0.02 * (event.shiftKey ? 2 : 1);
+              if (key === 'arrowleft') dx = -fineUnit;
+              if (key === 'arrowright') dx = fineUnit;
+              if (key === 'arrowup') dy = -fineUnit;
+              if (key === 'arrowdown') dy = fineUnit;
               panMapContent(dx, dy);
             } else if (keyboardMapSquishHeld) {
               let sx = 0, sy = 0;
-              const amount = 0.035 * (event.shiftKey ? 2 : 1);
+              const amount = fineUnit * 1.4;
               if (key === 'arrowleft') sx = -amount;
               if (key === 'arrowright') sx = amount;
               if (key === 'arrowup') sy = amount;
@@ -4659,9 +5114,11 @@
           const key = event.key.toLowerCase();
           clearActiveShortcut(key);
           if (key === 'd') keyboardMapCropHeld = false;
+          if (key === 'm') keyboardMapMoveHeld = false;
           if (key === 'v') keyboardMapPanHeld = false;
           if (key === 'x') keyboardMapSquishHeld = false;
           if (key === 'z') keyboardZoomHeld = false;
+          if (key.startsWith('arrow')) keyboardArrowHold = { key: "", start: 0, last: 0 };
         });
       }
 
