@@ -1878,6 +1878,7 @@
       let keyboardMapSquishHeld = false;
       let keyboardZoomHeld = false;
       let keyboardArrowHold = { key: "", start: 0, last: 0 };
+      let smoothSettingTweens = {};
       let activeShortcutSetting = null;
       let activeShortcutKey = null;
       let isRunning = false;
@@ -4537,24 +4538,90 @@
         renderMapOverlay();
       }
 
+      function isMapControlContext() {
+        return !!(keyboardMapMode || mapEditorVisible || activeSourceMode === "clone");
+      }
+
+      function smoothSetSetting(key, target, options = {}) {
+        const min = Number(options.min ?? -Infinity);
+        const max = Number(options.max ?? Infinity);
+        const nextTarget = clamp(Number(target), min, max);
+        if (!smoothSettingTweens[key]) smoothSettingTweens[key] = { target: nextTarget, active: false };
+        smoothSettingTweens[key].target = nextTarget;
+        smoothSettingTweens[key].options = options;
+
+        if (smoothSettingTweens[key].active) return;
+        smoothSettingTweens[key].active = true;
+
+        const tick = () => {
+          const tween = smoothSettingTweens[key];
+          if (!tween) return;
+          const current = Number(settings[key] ?? 0);
+          const targetValue = Number(tween.target);
+          let next = current + (targetValue - current) * Number(tween.options.ease ?? 0.24);
+          if (Math.abs(targetValue - next) < Number(tween.options.snap ?? 0.002)) {
+            next = targetValue;
+            tween.active = false;
+          }
+
+          applySetting(key, next, false);
+          if (key.startsWith("mapContent")) {
+            syncActiveProjectionState();
+            renderMapOverlay();
+          }
+
+          if (!masterUIHidden && tween.options.label) {
+            const formatter = tween.options.formatter || (value => formatValue(key, value));
+            const percent = tween.options.percent || (() => {
+              const low = Number(tween.options.min ?? 0);
+              const high = Number(tween.options.max ?? 1);
+              return (next - low) / Math.max(0.0001, high - low);
+            });
+            showShortcutHUD(tween.options.label, formatter(next), percent(next), false);
+          }
+
+          if (tween.active) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }
+
+      function smoothPanSettings(xKey, yKey, dx, dy, label) {
+        const nextX = clamp(Number(settings[xKey] || 0) + dx, -1, 1);
+        const nextY = clamp(Number(settings[yKey] || 0) + dy, -1, 1);
+        smoothSetSetting(xKey, nextX, {
+          min: -1,
+          max: 1,
+          ease: 0.30,
+          snap: 0.001,
+          label,
+          formatter: () => `X ${Number(settings[xKey] || 0).toFixed(2)} / Y ${Number(settings[yKey] || 0).toFixed(2)}`,
+          percent: value => (value + 1) / 2
+        });
+        smoothSetSetting(yKey, nextY, {
+          min: -1,
+          max: 1,
+          ease: 0.30,
+          snap: 0.001
+        });
+      }
+
       function adjustMapContentZoom(delta) {
         pushMapHistory();
         const next = clamp(Number(settings.mapContentZoom || 1) + delta, 0.25, 4);
-        applySetting("mapContentZoom", next, false);
-        syncActiveProjectionState();
-        renderMapOverlay();
-        showShortcutHUD("Frame Zoom", `${next.toFixed(2)}x`, (next - 0.25) / 3.75, false);
+        smoothSetSetting("mapContentZoom", next, {
+          min: 0.25,
+          max: 4,
+          ease: 0.26,
+          snap: 0.0018,
+          label: "Frame Zoom",
+          formatter: value => `${value.toFixed(2)}x`,
+          percent: value => (value - 0.25) / 3.75
+        });
       }
 
       function panMapContent(dx, dy) {
         pushMapHistory();
-        const nextX = clamp(Number(settings.mapContentX || 0) + dx, -1, 1);
-        const nextY = clamp(Number(settings.mapContentY || 0) + dy, -1, 1);
-        applySetting("mapContentX", nextX, false);
-        applySetting("mapContentY", nextY, false);
-        syncActiveProjectionState();
-        renderMapOverlay();
-        showShortcutHUD("Frame Pan", `X ${nextX.toFixed(2)} / Y ${nextY.toFixed(2)}`, (nextX + 1) / 2, false);
+        smoothPanSettings("mapContentX", "mapContentY", dx, dy, "Frame Pan");
       }
 
       function squishMapContent(dx, dy) {
@@ -5467,14 +5534,14 @@
             return;
           }
 
-          if (keyboardMapMode && key === 'd' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          if (isMapControlContext() && key === 'd' && !event.ctrlKey && !event.metaKey && !event.altKey) {
             keyboardMapCropHeld = true;
             showMapShortcutHUD("Move Point", "Hold + arrows");
             event.preventDefault();
             return;
           }
 
-          if (keyboardMapMode && key === 'm' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          if (isMapControlContext() && key === 'm' && !event.ctrlKey && !event.metaKey && !event.altKey) {
             keyboardMapMoveHeld = true;
             showMapShortcutHUD("Move Whole Frame", "Hold + arrows");
             event.preventDefault();
@@ -5493,14 +5560,14 @@
             return;
           }
 
-          if ((key === 'c' || (keyboardMapMode && key === 'v')) && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          if ((key === 'c' || (isMapControlContext() && key === 'v')) && !event.ctrlKey && !event.metaKey && !event.altKey) {
             keyboardMapPanHeld = true;
-            showMapShortcutHUD(keyboardMapMode ? "Frame Pan" : "Camera/Feed Pan", "Hold + arrows");
+            showMapShortcutHUD(isMapControlContext() ? "Frame Pan" : "Camera/Feed Pan", "Hold + arrows");
             event.preventDefault();
             return;
           }
 
-          if (keyboardMapMode && key === 'x' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          if (isMapControlContext() && key === 'x' && !event.ctrlKey && !event.metaKey && !event.altKey) {
             keyboardMapSquishHeld = true;
             showMapShortcutHUD("Frame Squish", "Hold + arrows");
             event.preventDefault();
@@ -5509,18 +5576,26 @@
 
           if (key === 'z' && !event.ctrlKey && !event.metaKey && !event.altKey) {
             keyboardZoomHeld = true;
-            showMapShortcutHUD(keyboardMapMode ? "Frame Zoom" : "Camera/Feed Zoom", "Press + or -");
+            showMapShortcutHUD(isMapControlContext() ? "Frame Zoom + Pan" : "Camera/Feed Zoom + Pan", "Use +/- and arrows");
             event.preventDefault();
             return;
           }
 
           if (keyboardZoomHeld && (rawKey === '+' || rawKey === '=' || rawKey === '-' || rawKey === '_')) {
             event.preventDefault();
-            if (keyboardMapMode) adjustMapContentZoom((rawKey === '-' || rawKey === '_') ? -0.08 : 0.08);
+            const zoomStep = (event.shiftKey ? 0.055 : 0.028) * ((rawKey === '-' || rawKey === '_') ? -1 : 1);
+            if (isMapControlContext()) adjustMapContentZoom(zoomStep);
             else {
-              const next = clamp(Number(settings.sourceZoom || 1) + ((rawKey === '-' || rawKey === '_') ? -0.08 : 0.08), 1, 4);
-              applySetting("sourceZoom", next, false);
-              showShortcutHUD("Camera/Feed Zoom", `${next.toFixed(2)}x`, (next - 1) / 3, false);
+              const next = clamp(Number(settings.sourceZoom || 1) + zoomStep, 1, 4);
+              smoothSetSetting("sourceZoom", next, {
+                min: 1,
+                max: 4,
+                ease: 0.24,
+                snap: 0.0015,
+                label: "Camera/Feed Zoom",
+                formatter: value => `${value.toFixed(2)}x`,
+                percent: value => (value - 1) / 3
+              });
             }
             return;
           }
@@ -5567,7 +5642,20 @@
             return;
           }
 
-          if (keyboardMapMode && ["arrowup", "arrowright", "arrowdown", "arrowleft"].includes(key)) {
+          if (keyboardZoomHeld && ["arrowup", "arrowright", "arrowdown", "arrowleft"].includes(key)) {
+            event.preventDefault();
+            const unit = event.shiftKey ? 0.030 : 0.010;
+            let dx = 0, dy = 0;
+            if (key === 'arrowleft') dx = -unit;
+            if (key === 'arrowright') dx = unit;
+            if (key === 'arrowup') dy = -unit;
+            if (key === 'arrowdown') dy = unit;
+            if (isMapControlContext()) panMapContent(dx, dy);
+            else smoothPanSettings("sourcePanX", "sourcePanY", dx, dy, "Camera/Feed Pan");
+            return;
+          }
+
+          if (isMapControlContext() && ["arrowup", "arrowright", "arrowdown", "arrowleft"].includes(key)) {
             event.preventDefault();
             const pixelStep = getKeyboardArrowStep(key, event.shiftKey ? 3.5 : 0.65);
             const fineUnit = getKeyboardArrowStep(key, event.shiftKey ? 0.022 : 0.004);
