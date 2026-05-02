@@ -63,6 +63,20 @@
       background: #000;
     }
 
+    #mapCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      pointer-events: none;
+      z-index: 8;
+    }
+
+    #mapCanvas.editing {
+      pointer-events: auto;
+    }
+
     #videoSource, #sourceCanvas, #scratchCanvas {
       position: absolute;
       width: 1px;
@@ -318,6 +332,40 @@
     .miniButton {
       padding: 8px 12px;
       font-size: 0.78rem;
+    }
+
+    .mapButton {
+      border-color: rgba(255, 138, 40, 0.54) !important;
+      background: rgba(255, 138, 40, 0.18) !important;
+      color: rgba(255, 244, 221, 0.96) !important;
+      box-shadow: 0 0 18px rgba(255, 138, 40, 0.24), inset 0 0 12px rgba(255, 138, 40, 0.12);
+    }
+
+    .mapButton.active,
+    .shapeButton.active,
+    .modeButton.active,
+    .ghostButton.active {
+      border-color: rgba(87, 255, 231, 0.72);
+      background: linear-gradient(145deg, rgba(87, 255, 231, 0.22), rgba(87, 255, 138, 0.10));
+      color: #eafffb;
+      box-shadow: 0 0 18px rgba(87, 255, 231, 0.14);
+    }
+
+    .shapeButton.customShape {
+      border-color: rgba(255, 138, 40, 0.54);
+      box-shadow: 0 0 16px rgba(255, 138, 40, 0.18);
+      color: #fff4dd;
+    }
+
+    .buttonGrid.five {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .mapHint {
+      color: rgba(234,255,251,0.68);
+      font-size: 0.74rem;
+      line-height: 1.5;
+      margin-top: 10px;
     }
 
     #topBar {
@@ -762,6 +810,7 @@
 <body>
   <div id="appShell">
     <canvas id="visualCanvas" aria-label="MARZview audio reactive camera canvas"></canvas>
+    <canvas id="mapCanvas" aria-label="MARZview mapping canvas"></canvas>
     <video id="videoSource" playsinline autoplay muted></video>
     <canvas id="sourceCanvas"></canvas>
     <canvas id="scratchCanvas"></canvas>
@@ -810,6 +859,7 @@
         <strong>Controls</strong>
         <div>
           <button id="keysButton" class="miniButton" title="Keyboard shortcuts">Keys</button>
+          <button id="mapButton" class="miniButton mapButton" title="Projection mapping">Map</button>
           <button id="hideUIButton" class="miniButton" title="Hide interface">Hide UI</button>
           <button id="randomizeButton" class="miniButton" title="Randomize look">Dice</button>
           <button id="appBugButton" class="miniButton" title="Report a bug">Bug</button>
@@ -820,6 +870,7 @@
         <div class="panelTabs" role="tablist" aria-label="MARZview panels">
           <button class="panelTab active" data-panel="effectsPanel">E Effects</button>
           <button class="panelTab" data-panel="visualPanel">V Visual</button>
+          <button class="panelTab" data-panel="mapPanel">M Map</button>
           <button class="panelTab" data-panel="exportPanel">X Export</button>
           <button class="panelTab" data-panel="cameraPanel">C Camera</button>
         </div>
@@ -891,7 +942,33 @@
           </div>
         </div>
 
-        <div id="exportPanel" class="panelPage">
+        
+        <div id="mapPanel" class="panelPage">
+          <div class="sectionTitle">Projection map <span>drag the frame on screen</span></div>
+          <div class="buttonGrid three">
+            <button id="mapEnabledButton" class="ghostButton">Map Off</button>
+            <button id="mapEditButton" class="ghostButton active">Edit Frame</button>
+            <button id="mapResetButton" class="ghostButton">Reset</button>
+          </div>
+          <div class="sectionTitle" style="margin-top:14px;">Shape <span>fully adjustable</span></div>
+          <div class="buttonGrid five">
+            <button id="shapeCircleButton" class="ghostButton shapeButton">Circle</button>
+            <button id="shapeTriangleButton" class="ghostButton shapeButton">Triangle</button>
+            <button id="shapeRectangleButton" class="ghostButton shapeButton">Rectangle</button>
+            <button id="shapeDiamondButton" class="ghostButton shapeButton">Diamond</button>
+            <button id="shapeCustomButton" class="ghostButton shapeButton customShape">Custom</button>
+          </div>
+          <div class="sectionTitle" style="margin-top:14px;">Apply mode <span>crop or contort</span></div>
+          <div class="buttonGrid">
+            <button id="mapModeMaskButton" class="ghostButton modeButton">Mask Outside</button>
+            <button id="mapModeWarpButton" class="ghostButton modeButton">Contort to Shape</button>
+          </div>
+          <div class="mapHint">
+            Drag the shape or its handles directly on the screen. In <strong>Custom</strong> mode, the four main corner points stay permanent. Tap inside the screen area to add a new point, tap an added point again to remove it, and drag any point to reshape the frame.
+          </div>
+        </div>
+
+<div id="exportPanel" class="panelPage">
           <div class="sectionTitle">Record canvas + mic <span>R toggles</span></div>
           <div class="buttonGrid">
             <button id="recordButton" class="ghostButton">Start Recording</button>
@@ -937,6 +1014,8 @@
         <div class="keyGroup cat-nav">Navigation + panels</div>
         <div class="keyCombo cat-nav"><kbd>K</kbd></div><div>Show / hide this color-coded shortcut guide.</div>
         <div class="keyCombo cat-nav"><kbd>U</kbd></div><div>Master hide/show. Fullscreen visual mode leaves only the tiny gray dot in the top-right corner.</div>
+        <div class="keyCombo cat-nav"><kbd>Map</kbd></div><div>Open the projection mapping panel and drag the frame on screen.</div>
+        <div class="keyCombo cat-nav"><kbd>A</kbd></div><div>Snap MARZview into keyboard mapping mode for custom screen editing.</div>
         <div class="keyCombo cat-nav"><kbd>E</kbd></div><div>Open Effects panel.</div>
         <div class="keyCombo cat-nav"><kbd>V</kbd></div><div>Open Visual panel.</div>
         <div class="keyCombo cat-nav"><kbd>X</kbd></div><div>Open Export panel.</div>
@@ -969,6 +1048,9 @@
         <div class="keyCombo cat-camera"><kbd>Hold ;</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Export Bitrate.</div>
         <div class="keyCombo cat-camera"><kbd>Hold '</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>FPS.</div>
         <div class="keyCombo cat-camera"><kbd>Shift</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Larger adjustment steps for whichever slider is active.</div>
+
+        <div class="keyCombo cat-camera"><kbd>Arrows</kbd></div><div>In keyboard mapping mode, arrows jump to the next mapping point when D is released.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold D</kbd> + <kbd>←</kbd>/<kbd>→</kbd>/<kbd>↑</kbd>/<kbd>↓</kbd></div><div>With the red beacon active, hold D and use arrows to crop / move the selected mapping point.</div>
 
         <div class="keyGroup cat-capture">Capture</div>
         <div class="keyCombo cat-capture"><kbd>R</kbd></div><div>Start / stop recording.</div>
@@ -1049,6 +1131,13 @@
         feedback: 0.24,
         zoom: 0.2,
         cameraAlpha: 0.06,
+        mapEnabled: false,
+        mapShape: "rectangle",
+        mapMode: "mask",
+        mapFrameX: 0.5,
+        mapFrameY: 0.5,
+        mapFrameW: 0.54,
+        mapFrameH: 0.54,
         exportBitrate: 8,
         fps: 30
       });
@@ -1058,12 +1147,18 @@
       let redoStack = [];
       let isApplyingHistory = false;
       let lastRange = null;
+      let mapCustomPoints = [];
+      let mapDrag = null;
+      let keyboardMapMode = false;
+      let keyboardMapSelectedIndex = 0;
+      let keyboardMapCropHeld = false;
       let activeShortcutSetting = null;
       let activeShortcutKey = null;
       let isRunning = false;
       let isPaused = false;
       let demoMode = false;
       let masterUIHidden = false;
+      let mapEditorVisible = false;
       let mediaStream = null;
       let audioContext = null;
       let analyser = null;
@@ -1080,6 +1175,8 @@
 
       const canvas = document.getElementById("visualCanvas");
       const ctx = canvas.getContext("2d", { alpha: false });
+      const mapCanvas = document.getElementById("mapCanvas");
+      const mapCtx = mapCanvas.getContext("2d");
       const video = document.getElementById("videoSource");
       const sourceCanvas = document.getElementById("sourceCanvas");
       const sourceCtx = sourceCanvas.getContext("2d", { willReadFrequently: true });
@@ -1199,10 +1296,16 @@
         canvas.height = Math.max(1, Math.floor(window.innerHeight * dpr));
         canvas.style.width = window.innerWidth + "px";
         canvas.style.height = window.innerHeight + "px";
+        mapCanvas.width = canvas.width;
+        mapCanvas.height = canvas.height;
+        mapCanvas.style.width = window.innerWidth + "px";
+        mapCanvas.style.height = window.innerHeight + "px";
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.fillStyle = "#000";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         previousData = null;
+        ensureMapState();
+        renderMapOverlay();
       }
 
       function resizeLoader() {
@@ -1224,6 +1327,7 @@
           }
         });
         updateEffectToggleButtons();
+        updateMapButtons();
       }
 
       function updateEffectToggleButtons() {
@@ -1257,6 +1361,262 @@
       function toggleNormalQuality() {
         applySetting("normalSharp", !settings.normalSharp);
         showToast(settings.normalSharp ? "Normal Camera: sharp source." : "Normal Camera: lower-bitrate source.");
+      }
+
+
+      function defaultMapCustomPoints() {
+        return [
+          { x: 0.24, y: 0.24, fixed: true },
+          { x: 0.76, y: 0.24, fixed: true },
+          { x: 0.76, y: 0.76, fixed: true },
+          { x: 0.24, y: 0.76, fixed: true }
+        ];
+      }
+
+      function ensureMapState() {
+        if (!Array.isArray(mapCustomPoints) || mapCustomPoints.length < 4) {
+          mapCustomPoints = defaultMapCustomPoints();
+        }
+      }
+
+      function getMapBBoxPixels() {
+        const cw = canvas.width;
+        const ch = canvas.height;
+        const cx = clamp(Number(settings.mapFrameX || 0.5), 0.05, 0.95) * cw;
+        const cy = clamp(Number(settings.mapFrameY || 0.5), 0.05, 0.95) * ch;
+        const w = clamp(Number(settings.mapFrameW || 0.54), 0.08, 1) * cw;
+        const h = clamp(Number(settings.mapFrameH || 0.54), 0.08, 1) * ch;
+        return { x: cx - w / 2, y: cy - h / 2, w, h, cx, cy };
+      }
+
+      function setMapBBoxFromPixels(x, y, w, h) {
+        const cw = canvas.width;
+        const ch = canvas.height;
+        w = clamp(w, cw * 0.06, cw * 0.96);
+        h = clamp(h, ch * 0.06, ch * 0.96);
+        let cx = x + w / 2;
+        let cy = y + h / 2;
+        cx = clamp(cx, w / 2, cw - w / 2);
+        cy = clamp(cy, h / 2, ch - h / 2);
+        settings.mapFrameX = cx / cw;
+        settings.mapFrameY = cy / ch;
+        settings.mapFrameW = w / cw;
+        settings.mapFrameH = h / ch;
+      }
+
+      function getMapPointsPixels() {
+        ensureMapState();
+        const box = getMapBBoxPixels();
+        if (settings.mapShape === 'custom') {
+          return mapCustomPoints.map(point => ({ x: point.x * canvas.width, y: point.y * canvas.height, fixed: !!point.fixed }));
+        }
+        if (settings.mapShape === 'circle') {
+          return [
+            { x: box.x, y: box.y },
+            { x: box.x + box.w, y: box.y },
+            { x: box.x + box.w, y: box.y + box.h },
+            { x: box.x, y: box.y + box.h }
+          ];
+        }
+        if (settings.mapShape === 'triangle') {
+          return [
+            { x: box.cx, y: box.y },
+            { x: box.x + box.w, y: box.y + box.h },
+            { x: box.x, y: box.y + box.h }
+          ];
+        }
+        if (settings.mapShape === 'diamond') {
+          return [
+            { x: box.cx, y: box.y },
+            { x: box.x + box.w, y: box.cy },
+            { x: box.cx, y: box.y + box.h },
+            { x: box.x, y: box.cy }
+          ];
+        }
+        return [
+          { x: box.x, y: box.y },
+          { x: box.x + box.w, y: box.y },
+          { x: box.x + box.w, y: box.y + box.h },
+          { x: box.x, y: box.y + box.h }
+        ];
+      }
+
+      function buildMapPath(context, points = getMapPointsPixels()) {
+        context.beginPath();
+        if (settings.mapShape === 'circle') {
+          const box = getMapBBoxPixels();
+          context.ellipse(box.cx, box.cy, box.w / 2, box.h / 2, 0, 0, Math.PI * 2);
+          return;
+        }
+        if (!points.length) return;
+        context.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) context.lineTo(points[i].x, points[i].y);
+        context.closePath();
+      }
+
+      function isPointInsideMap(point) {
+        mapCtx.save();
+        buildMapPath(mapCtx);
+        const inside = mapCtx.isPointInPath(point.x, point.y);
+        mapCtx.restore();
+        return inside;
+      }
+
+      function dist(a, b) {
+        return Math.hypot(a.x - b.x, a.y - b.y);
+      }
+
+      function distanceToSegment(point, a, b) {
+        const l2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2 || 1;
+        let t = ((point.x - a.x) * (b.x - a.x) + (point.y - a.y) * (b.y - a.y)) / l2;
+        t = clamp(t, 0, 1);
+        const proj = { x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y) };
+        return { distance: dist(point, proj), point: proj, t };
+      }
+
+      function findNearestMapPoint(point) {
+        const points = getMapPointsPixels();
+        const radius = Math.max(14, Math.min(canvas.width, canvas.height) * 0.012);
+        let hit = -1;
+        let best = Infinity;
+        points.forEach((candidate, index) => {
+          const d = dist(point, candidate);
+          if (d < radius && d < best) {
+            best = d;
+            hit = index;
+          }
+        });
+        return hit;
+      }
+
+      function getNearestMapSegment(point) {
+        const points = getMapPointsPixels();
+        let best = { index: points.length, distance: Infinity, point };
+        for (let i = 0; i < points.length; i++) {
+          const a = points[i];
+          const b = points[(i + 1) % points.length];
+          const test = distanceToSegment(point, a, b);
+          if (test.distance < best.distance) best = { index: i + 1, distance: test.distance, point: test.point };
+        }
+        return best;
+      }
+
+      function moveMapShape(dx, dy) {
+        if (settings.mapShape === 'custom') {
+          ensureMapState();
+          mapCustomPoints = mapCustomPoints.map(point => ({
+            ...point,
+            x: clamp(point.x + dx / canvas.width, 0, 1),
+            y: clamp(point.y + dy / canvas.height, 0, 1)
+          }));
+          return;
+        }
+        const box = getMapBBoxPixels();
+        setMapBBoxFromPixels(box.x + dx, box.y + dy, box.w, box.h);
+      }
+
+      function dragMapHandle(index, point) {
+        if (settings.mapShape === 'custom') {
+          ensureMapState();
+          if (!mapCustomPoints[index]) return;
+          mapCustomPoints[index] = {
+            ...mapCustomPoints[index],
+            x: clamp(point.x / canvas.width, 0, 1),
+            y: clamp(point.y / canvas.height, 0, 1)
+          };
+          return;
+        }
+        const box = getMapBBoxPixels();
+        let x1 = box.x, y1 = box.y, x2 = box.x + box.w, y2 = box.y + box.h;
+        if (index == 0) { x1 = point.x; y1 = point.y; }
+        if (index == 1) { x2 = point.x; y1 = point.y; }
+        if (index == 2) { x2 = point.x; y2 = point.y; }
+        if (index == 3) { x1 = point.x; y2 = point.y; }
+        const nx = Math.min(x1, x2), ny = Math.min(y1, y2);
+        const nw = Math.abs(x2 - x1), nh = Math.abs(y2 - y1);
+        setMapBBoxFromPixels(nx, ny, nw, nh);
+      }
+
+      function resetMapShape() {
+        settings.mapFrameX = 0.5;
+        settings.mapFrameY = 0.5;
+        settings.mapFrameW = 0.54;
+        settings.mapFrameH = 0.54;
+        mapCustomPoints = defaultMapCustomPoints();
+        updateControlsFromSettings();
+        renderMapOverlay();
+      }
+
+      function setMapShape(shape) {
+        settings.mapShape = shape;
+        if (shape === 'custom' && (!Array.isArray(mapCustomPoints) || mapCustomPoints.length < 4)) {
+          mapCustomPoints = defaultMapCustomPoints();
+        }
+        updateControlsFromSettings();
+        renderMapOverlay();
+        showToast(`Map shape: ${shape}.`);
+      }
+
+      function updateMapButtons() {
+        const mapBtn = document.getElementById('mapButton');
+        const mapEnabledButton = document.getElementById('mapEnabledButton');
+        const mapEditButton = document.getElementById('mapEditButton');
+        const shapes = {
+          circle: document.getElementById('shapeCircleButton'),
+          triangle: document.getElementById('shapeTriangleButton'),
+          rectangle: document.getElementById('shapeRectangleButton'),
+          diamond: document.getElementById('shapeDiamondButton'),
+          custom: document.getElementById('shapeCustomButton')
+        };
+        const maskButton = document.getElementById('mapModeMaskButton');
+        const warpButton = document.getElementById('mapModeWarpButton');
+        if (mapBtn) mapBtn.classList.toggle('active', !!settings.mapEnabled || mapEditorVisible);
+        if (mapEnabledButton) {
+          mapEnabledButton.textContent = settings.mapEnabled ? 'Map On' : 'Map Off';
+          mapEnabledButton.classList.toggle('active', !!settings.mapEnabled);
+        }
+        if (mapEditButton) {
+          mapEditButton.textContent = mapEditorVisible ? 'Edit Frame' : 'Edit Off';
+          mapEditButton.classList.toggle('active', !!mapEditorVisible);
+        }
+        for (const [key, button] of Object.entries(shapes)) {
+          if (button) button.classList.toggle('active', settings.mapShape === key);
+        }
+        if (maskButton) maskButton.classList.toggle('active', settings.mapMode === 'mask');
+        if (warpButton) warpButton.classList.toggle('active', settings.mapMode === 'warp');
+      }
+
+      function toggleMapEnabled() {
+        settings.mapEnabled = !settings.mapEnabled;
+        updateControlsFromSettings();
+        renderMapOverlay();
+        showToast(settings.mapEnabled ? 'Projection map enabled.' : 'Projection map disabled.');
+      }
+
+      function toggleMapEditor(force = null) {
+        mapEditorVisible = typeof force === 'boolean' ? force : !mapEditorVisible;
+        mapCanvas.classList.toggle('editing', mapEditorVisible);
+        updateControlsFromSettings();
+        renderMapOverlay();
+        showToast(mapEditorVisible ? 'Map edit mode: drag the frame on screen.' : 'Map edit mode off.');
+      }
+
+      function setMapMode(mode) {
+        settings.mapMode = mode;
+        updateControlsFromSettings();
+        renderMapOverlay();
+        showToast(mode === 'mask' ? 'Map mode: mask outside the frame.' : 'Map mode: contort the visual feedback into the shape.');
+      }
+
+      function activateMapPanel() {
+        showPanel('mapPanel');
+        if (masterUIHidden) setMasterUIHidden(false);
+        if (!settings.mapEnabled) settings.mapEnabled = true;
+        if (!mapEditorVisible) mapEditorVisible = true;
+        mapCanvas.classList.add('editing');
+        keyboardMapSelectedIndex = Math.min(keyboardMapSelectedIndex, getMapHandleCount() - 1);
+        updateControlsFromSettings();
+        renderMapOverlay();
       }
 
       function formatValue(key, value) {
@@ -1410,10 +1770,21 @@
         document.getElementById("secondaryToggleButton").addEventListener("click", () => toggleEffectLayer("secondary"));
         document.getElementById("normalQualityButton").addEventListener("click", toggleNormalQuality);
         document.getElementById("keysButton").addEventListener("click", () => cheatSheet.classList.toggle("hidden"));
+        document.getElementById("mapButton").addEventListener("click", activateMapPanel);
         document.getElementById("hideUIButton").addEventListener("click", toggleMasterUI);
         masterHideButton.addEventListener("click", toggleMasterUI);
         document.getElementById("homeBugButton").addEventListener("click", reportBug);
         document.getElementById("appBugButton").addEventListener("click", reportBug);
+        document.getElementById("mapEnabledButton").addEventListener("click", toggleMapEnabled);
+        document.getElementById("mapEditButton").addEventListener("click", () => toggleMapEditor());
+        document.getElementById("mapResetButton").addEventListener("click", () => { resetMapShape(); showToast("Map frame reset."); });
+        document.getElementById("shapeCircleButton").addEventListener("click", () => setMapShape("circle"));
+        document.getElementById("shapeTriangleButton").addEventListener("click", () => setMapShape("triangle"));
+        document.getElementById("shapeRectangleButton").addEventListener("click", () => setMapShape("rectangle"));
+        document.getElementById("shapeDiamondButton").addEventListener("click", () => setMapShape("diamond"));
+        document.getElementById("shapeCustomButton").addEventListener("click", () => setMapShape("custom"));
+        document.getElementById("mapModeMaskButton").addEventListener("click", () => setMapMode("mask"));
+        document.getElementById("mapModeWarpButton").addEventListener("click", () => setMapMode("warp"));
         document.getElementById("randomizeButton").addEventListener("click", randomizeSettings);
         document.getElementById("recordButton").addEventListener("click", toggleRecording);
         document.getElementById("snapshotButton").addEventListener("click", saveSnapshot);
@@ -1434,6 +1805,10 @@
         controlDock.classList.remove("collapsed");
         document.querySelectorAll(".panelTab").forEach(tab => tab.classList.toggle("active", tab.dataset.panel === panelId));
         document.querySelectorAll(".panelPage").forEach(panel => panel.classList.toggle("active", panel.id === panelId));
+        mapEditorVisible = panelId === 'mapPanel';
+        mapCanvas.classList.toggle('editing', mapEditorVisible);
+        updateMapButtons();
+        renderMapOverlay();
       }
 
       function toggleControls() {
@@ -1476,6 +1851,9 @@
         topBar.classList.add("hidden");
         cornerHint.classList.add("hidden");
         cheatSheet.classList.add("hidden");
+        mapEditorVisible = false;
+        mapCanvas.classList.remove("editing");
+        renderMapOverlay();
         masterUIHidden = false;
         masterHideButton.classList.add("hidden");
         updateMasterHideButton();
@@ -1701,13 +2079,204 @@
         const bothOff = !settings.primaryEnabled && !settings.secondaryEnabled;
         if (bothOff) {
           drawNormalCamera(frame, 1);
-          return;
+        } else {
+          drawBackgroundFade(frame);
+          drawCameraGhost(frame);
+          if (settings.primaryEnabled) drawEffect(settings.primaryEffect, frame, settings.primaryMix);
+          if (settings.secondaryEnabled) drawEffect(settings.secondaryEffect, frame, settings.secondaryMix);
+          drawVignette(frame);
         }
-        drawBackgroundFade(frame);
-        drawCameraGhost(frame);
-        if (settings.primaryEnabled) drawEffect(settings.primaryEffect, frame, settings.primaryMix);
-        if (settings.secondaryEnabled) drawEffect(settings.secondaryEffect, frame, settings.secondaryMix);
-        drawVignette(frame);
+        if (settings.mapEnabled) applyMapTransform();
+        renderMapOverlay();
+      }
+
+
+      function applyMapTransform() {
+        scratchCanvas.width = canvas.width;
+        scratchCanvas.height = canvas.height;
+        scratchCtx.setTransform(1, 0, 0, 1, 0, 0);
+        scratchCtx.clearRect(0, 0, scratchCanvas.width, scratchCanvas.height);
+        scratchCtx.drawImage(canvas, 0, 0);
+        const points = getMapPointsPixels();
+        const box = getMapBBoxPixels();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        buildMapPath(ctx, points);
+        ctx.clip();
+        if (settings.mapMode === 'warp') {
+          ctx.drawImage(scratchCanvas, 0, 0, scratchCanvas.width, scratchCanvas.height, box.x, box.y, box.w, box.h);
+        } else {
+          ctx.drawImage(scratchCanvas, 0, 0);
+        }
+        ctx.restore();
+      }
+
+      function getMapHandlePoints() {
+        const points = getMapPointsPixels();
+        const box = getMapBBoxPixels();
+        return settings.mapShape === 'custom' ? points : [
+          { x: box.x, y: box.y },
+          { x: box.x + box.w, y: box.y },
+          { x: box.x + box.w, y: box.y + box.h },
+          { x: box.x, y: box.y + box.h }
+        ];
+      }
+
+      function getMapHandleCount() {
+        return Math.max(1, getMapHandlePoints().length);
+      }
+
+      function toggleKeyboardMapMode(force = null) {
+        const next = typeof force === 'boolean' ? force : !keyboardMapMode;
+        keyboardMapMode = next;
+        keyboardMapCropHeld = false;
+        if (keyboardMapMode) {
+          activateMapPanel();
+          keyboardMapSelectedIndex = Math.min(keyboardMapSelectedIndex, getMapHandleCount() - 1);
+          showToast('Keyboard map mode on. Red beacon marks the selected point. Hold D + arrows to crop.');
+        } else {
+          showToast('Keyboard map mode off.');
+        }
+        renderMapOverlay();
+      }
+
+      function moveKeyboardMapSelection(direction) {
+        const count = getMapHandleCount();
+        keyboardMapSelectedIndex = (keyboardMapSelectedIndex + direction + count) % count;
+        renderMapOverlay();
+      }
+
+      function nudgeKeyboardMapPoint(dx, dy) {
+        const handles = getMapHandlePoints();
+        if (!handles.length) return;
+        const index = ((keyboardMapSelectedIndex % handles.length) + handles.length) % handles.length;
+        const point = handles[index];
+        dragMapHandle(index, { x: point.x + dx, y: point.y + dy });
+        renderMapOverlay();
+      }
+
+      function renderMapOverlay() {
+        if (!mapCtx) return;
+        mapCtx.setTransform(1, 0, 0, 1, 0, 0);
+        mapCtx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
+        if (!(settings.mapEnabled || mapEditorVisible)) return;
+        const points = getMapPointsPixels();
+        const handlePoints = getMapHandlePoints();
+        mapCtx.save();
+        buildMapPath(mapCtx, points);
+        mapCtx.fillStyle = mapEditorVisible ? 'rgba(255, 138, 40, 0.08)' : 'rgba(255, 138, 40, 0.03)';
+        mapCtx.strokeStyle = settings.mapMode === 'warp' ? 'rgba(87,255,231,0.95)' : 'rgba(255,138,40,0.95)';
+        mapCtx.lineWidth = Math.max(2, Math.min(mapCanvas.width, mapCanvas.height) * 0.002);
+        mapCtx.setLineDash(mapEditorVisible ? [12, 8] : []);
+        mapCtx.shadowColor = settings.mapMode === 'warp' ? 'rgba(87,255,231,0.5)' : 'rgba(255,138,40,0.5)';
+        mapCtx.shadowBlur = mapEditorVisible ? 18 : 10;
+        mapCtx.fill();
+        mapCtx.stroke();
+        mapCtx.restore();
+        if (!mapEditorVisible) return;
+        handlePoints.forEach((point, index) => {
+          const radius = (index < 4 ? 5.2 : 4) * Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+          mapCtx.beginPath();
+          mapCtx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+          const isSelected = keyboardMapMode && index === (keyboardMapSelectedIndex % Math.max(1, handlePoints.length));
+          mapCtx.fillStyle = isSelected ? 'rgba(255, 92, 92, 0.98)' : (index < 4 ? 'rgba(255,244,221,0.98)' : 'rgba(87,255,231,0.98)');
+          mapCtx.strokeStyle = isSelected ? 'rgba(90, 0, 0, 0.95)' : 'rgba(0,0,0,0.85)';
+          mapCtx.lineWidth = 1.25 * Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+          mapCtx.shadowColor = isSelected ? 'rgba(255, 70, 70, 0.85)' : 'transparent';
+          mapCtx.shadowBlur = isSelected ? 18 : 0;
+          mapCtx.fill();
+          mapCtx.stroke();
+        });
+
+        if (keyboardMapMode && handlePoints.length) {
+          const selected = handlePoints[((keyboardMapSelectedIndex % handlePoints.length) + handlePoints.length) % handlePoints.length];
+          const pulse = (Math.sin(performance.now() * 0.01) + 1) * 0.5;
+          const beaconY = selected.y - 18 * Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+          mapCtx.save();
+          mapCtx.beginPath();
+          mapCtx.moveTo(selected.x, selected.y - 4);
+          mapCtx.lineTo(selected.x, beaconY + 4);
+          mapCtx.strokeStyle = `rgba(255, ${Math.round(80 - pulse * 40)}, ${Math.round(80 - pulse * 40)}, ${0.75 + pulse * 0.2})`;
+          mapCtx.lineWidth = 1.5;
+          mapCtx.shadowColor = 'rgba(255, 50, 50, 0.9)';
+          mapCtx.shadowBlur = 18;
+          mapCtx.stroke();
+          mapCtx.beginPath();
+          mapCtx.arc(selected.x, beaconY, 5 + pulse * 3, 0, Math.PI * 2);
+          mapCtx.fillStyle = `rgba(255, ${Math.round(65 - pulse * 30)}, ${Math.round(65 - pulse * 30)}, ${0.82 + pulse * 0.18})`;
+          mapCtx.fill();
+          mapCtx.restore();
+        }
+      }
+
+      function getEventCanvasPoint(event) {
+        const rect = mapCanvas.getBoundingClientRect();
+        const scaleX = mapCanvas.width / rect.width;
+        const scaleY = mapCanvas.height / rect.height;
+        return { x: (event.clientX - rect.left) * scaleX, y: (event.clientY - rect.top) * scaleY };
+      }
+
+      function setupMapInteractions() {
+        mapCanvas.addEventListener('pointerdown', event => {
+          if (!mapEditorVisible) return;
+          const point = getEventCanvasPoint(event);
+          const hit = findNearestMapPoint(point);
+          mapDrag = {
+            pointerId: event.pointerId,
+            mode: 'none',
+            index: hit,
+            start: point,
+            moved: false
+          };
+          if (hit !== -1) {
+            mapDrag.mode = 'point';
+            mapCanvas.setPointerCapture(event.pointerId);
+            return;
+          }
+          if (isPointInsideMap(point)) {
+            mapDrag.mode = 'move';
+            mapCanvas.setPointerCapture(event.pointerId);
+            return;
+          }
+          if (settings.mapShape === 'custom') {
+            mapDrag.mode = 'create';
+            mapCanvas.setPointerCapture(event.pointerId);
+          }
+        });
+
+        mapCanvas.addEventListener('pointermove', event => {
+          if (!mapEditorVisible || !mapDrag || mapDrag.pointerId !== event.pointerId) return;
+          const point = getEventCanvasPoint(event);
+          const dx = point.x - mapDrag.start.x;
+          const dy = point.y - mapDrag.start.y;
+          if (Math.abs(dx) > 2 || Math.abs(dy) > 2) mapDrag.moved = true;
+          if (mapDrag.mode === 'point' && mapDrag.moved) {
+            dragMapHandle(mapDrag.index, point);
+            renderMapOverlay();
+          } else if (mapDrag.mode === 'move') {
+            moveMapShape(dx, dy);
+            mapDrag.start = point;
+            renderMapOverlay();
+          }
+        });
+
+        function finishPointer(event) {
+          if (!mapDrag || mapDrag.pointerId !== event.pointerId) return;
+          const point = getEventCanvasPoint(event);
+          if (mapDrag.mode === 'point' && !mapDrag.moved && settings.mapShape === 'custom' && mapDrag.index >= 4) {
+            mapCustomPoints.splice(mapDrag.index, 1);
+          } else if (mapDrag.mode === 'create' && !mapDrag.moved && settings.mapShape === 'custom') {
+            const nearest = getNearestMapSegment(point);
+            mapCustomPoints.splice(nearest.index, 0, { x: clamp(point.x / canvas.width, 0, 1), y: clamp(point.y / canvas.height, 0, 1), fixed: false });
+          }
+          renderMapOverlay();
+          try { mapCanvas.releasePointerCapture(event.pointerId); } catch (e) {}
+          mapDrag = null;
+        }
+
+        mapCanvas.addEventListener('pointerup', finishPointer);
+        mapCanvas.addEventListener('pointercancel', finishPointer);
       }
 
       function drawBackgroundFade(frame) {
@@ -2245,6 +2814,18 @@
             return;
           }
 
+          if (key === 'a' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            event.preventDefault();
+            toggleKeyboardMapMode();
+            return;
+          }
+
+          if (keyboardMapMode && key === 'd' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            keyboardMapCropHeld = true;
+            event.preventDefault();
+            return;
+          }
+
           const number = /^\d$/.test(event.key) ? Number(event.key) : null;
           if (number !== null) {
             event.preventDefault();
@@ -2255,6 +2836,23 @@
           if (key === "b" && event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
             event.preventDefault();
             randomizeSettings();
+            return;
+          }
+
+          if (keyboardMapMode && ["arrowup", "arrowright", "arrowdown", "arrowleft"].includes(key)) {
+            event.preventDefault();
+            if (keyboardMapCropHeld) {
+              const step = event.shiftKey ? 10 : 4;
+              let dx = 0, dy = 0;
+              if (key === 'arrowleft') dx = -step;
+              if (key === 'arrowright') dx = step;
+              if (key === 'arrowup') dy = -step;
+              if (key === 'arrowdown') dy = step;
+              nudgeKeyboardMapPoint(dx, dy);
+            } else {
+              const direction = (key === 'arrowright' || key === 'arrowdown') ? 1 : -1;
+              moveKeyboardMapSelection(direction);
+            }
             return;
           }
 
@@ -2298,7 +2896,9 @@
         });
 
         document.addEventListener("keyup", event => {
-          clearActiveShortcut(event.key.toLowerCase());
+          const key = event.key.toLowerCase();
+          clearActiveShortcut(key);
+          if (key === 'd') keyboardMapCropHeld = false;
         });
       }
 
@@ -2404,6 +3004,7 @@
         resizeLoader();
         setupControls();
         setupKeyboard();
+        setupMapInteractions();
         window.addEventListener("resize", () => {
           resizeCanvas();
           resizeLoader();
