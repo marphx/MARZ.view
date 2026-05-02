@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#020606" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <title>MARZview</title>
   <style>
     :root {
@@ -32,6 +36,10 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
+      position: fixed;
+      inset: 0;
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: auto;
       background: var(--bg);
       color: var(--text);
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -105,6 +113,115 @@
     #loaderScreen {
       z-index: 50;
       background: #020606;
+    }
+    #guideScreen {
+      z-index: 45;
+      padding: 16px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .guideCard {
+      width: min(1040px, 96vw);
+      max-height: min(92vh, 980px);
+      border-radius: 26px;
+      border: 1px solid rgba(87,255,231,0.22);
+      background: linear-gradient(155deg, rgba(3,14,15,0.96), rgba(3,8,8,0.94));
+      box-shadow: var(--shadow), inset 0 0 54px rgba(87,255,231,0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .guideHeader {
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid rgba(87,255,231,0.16);
+      background: linear-gradient(180deg, rgba(87,255,231,0.08), rgba(87,255,231,0.02));
+    }
+
+    .guideHeader h2 {
+      margin: 0 0 8px;
+      font-size: clamp(1.1rem, 2.8vw, 1.6rem);
+      color: var(--text);
+      text-shadow: 0 0 14px rgba(87,255,231,0.12);
+    }
+
+    .guideHeader p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.96rem;
+    }
+
+    .guideBody {
+      padding: 18px 22px 24px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .guideSection {
+      border: 1px solid rgba(87,255,231,0.14);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.02);
+      padding: 14px 16px;
+      box-shadow: inset 0 0 14px rgba(87,255,231,0.04);
+    }
+
+    .guideSection h3 {
+      margin: 0 0 10px;
+      color: #eafffb;
+      font-size: 1rem;
+    }
+
+    .guideSection p,
+    .guideSection li {
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.92rem;
+    }
+
+    .guideSection ul,
+    .guideSection ol {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .guideCallout {
+      border-left: 3px solid rgba(255,138,40,0.7);
+      padding-left: 12px;
+      color: #fff4dd;
+    }
+
+    .guideGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .guideChip {
+      border-radius: 14px;
+      padding: 10px 12px;
+      border: 1px solid rgba(87,255,231,0.18);
+      background: rgba(87,255,231,0.05);
+    }
+
+    .guideChip strong { display:block; margin-bottom: 5px; color: #eafffb; }
+
+    .guideFooter {
+      border-top: 1px solid rgba(87,255,231,0.16);
+      padding: 14px 20px calc(14px + var(--safe-bottom));
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      background: rgba(0,0,0,0.22);
     }
 
     #loaderCanvas {
@@ -444,6 +561,13 @@
       border-color: rgba(255, 138, 40, 0.54);
       box-shadow: 0 0 16px rgba(255, 138, 40, 0.18);
       color: #fff4dd;
+    }
+
+    .traceButton {
+      border-color: rgba(87, 255, 231, 0.62) !important;
+      background: linear-gradient(145deg, rgba(87,255,231,0.20), rgba(255,138,40,0.10)) !important;
+      color: #eafffb !important;
+      box-shadow: 0 0 18px rgba(87,255,231,0.20), inset 0 0 14px rgba(255,138,40,0.08);
     }
 
     .buttonGrid.five {
@@ -978,9 +1102,113 @@
             <button id="startButton" class="primaryButton">Start Camera + Mic</button>
             <button id="demoButton" class="ghostButton">Open Demo Visualizer</button>
             <button id="loaderPreviewButton" class="ghostButton">Replay Loader</button>
+            <button id="homeHelpButton" class="ghostButton">How To</button>
             <button id="homeBugButton" class="tinyBugButton" type="button">Report a Bug</button>
           </div>
           <p class="tinyNote">For iPhone/iPad, start from a tap so Safari can unlock camera, mic, and audio analysis. MP4 export appears when the browser supports MediaRecorder MP4; otherwise the app records a WebM fallback.</p>
+        </div>
+      </div>
+        </section>
+
+    <section id="guideScreen" class="screen hidden" aria-label="How to use MARZview">
+      <div class="guideCard">
+        <div class="guideHeader">
+          <h2>MARZview — complete how-to guide</h2>
+          <p>This page explains every major screen, control group, and mapping tool. Use it as your help center before launching, or reopen it from the app with the <strong>Help</strong> button.</p>
+        </div>
+        <div class="guideBody">
+          <div class="guideSection">
+            <h3>1) Quick launch flow</h3>
+            <ol>
+              <li>Start on the home page and tap <strong>Start Camera + Mic</strong>.</li>
+              <li>Read through this guide, then tap <strong>Launch</strong> at the bottom.</li>
+              <li>The cactus loading screen plays.</li>
+              <li>MARZview opens with the live camera, the microphone, and the control dock.</li>
+            </ol>
+            <p class="guideCallout">Tip: if you are projecting live, use <strong>Hide UI</strong> or the small gray dot to keep the output clean while still controlling the app from your keyboard.</p>
+          </div>
+
+          <div class="guideSection">
+            <h3>2) Main screens and buttons</h3>
+            <div class="guideGrid">
+              <div class="guideChip"><strong>Home</strong>Animated intro page. Use Start to open this guide, Replay Loader to preview the loading screen, and Report a Bug to email a bug report.</div>
+              <div class="guideChip"><strong>Help</strong>Opens this guide again from inside the app so users can review the workflow without leaving the project.</div>
+              <div class="guideChip"><strong>Full</strong>Requests fullscreen and reduces the interface for projection use.</div>
+              <div class="guideChip"><strong>Normal</strong>Resets the active view back to a smooth normal camera feed with effects off and a clean default state.</div>
+            </div>
+          </div>
+
+          <div class="guideSection">
+            <h3>3) Effects and visual controls</h3>
+            <ul>
+              <li><strong>Primary / Secondary Effect:</strong> choose up to two visual layers and blend them together.</li>
+              <li><strong>Primary On / Secondary On:</strong> turn each effect layer on or off without losing the chosen effect.</li>
+              <li><strong>Normal Sharp:</strong> switches between a cleaner source render and a softer lower-bitrate render.</li>
+              <li><strong>Sliders:</strong> intensity, glow, trail, texture, bitrate, color drift, edge boost, feedback, zoom warp, camera ghost, mic sensitivity, export bitrate, and FPS each change part of the visual response.</li>
+            </ul>
+          </div>
+
+          <div class="guideSection">
+            <h3>4) Projection mapping workflow</h3>
+            <ol>
+              <li>Open the <strong>Map</strong> panel.</li>
+              <li>Turn mapping on if needed and choose a shape or use <strong>Custom</strong>.</li>
+              <li>Drag the frame, drag corner points, or add/remove custom points.</li>
+              <li>Use <strong>Mask</strong> to hide everything outside the shape, or <strong>Warp</strong> to contort the visual inside the shape.</li>
+              <li>Use the content controls to zoom, pan, and squish the image inside the frame.</li>
+              <li>Use <strong>Trace Subject</strong>, <strong>Tight Trace</strong>, or <strong>Box Trace</strong> to detect a dominant subject and create a more precise frame automatically.</li>
+            </ol>
+          </div>
+
+          <div class="guideSection">
+            <h3>5) Uploaded media, GIFs, and duplicated live frames</h3>
+            <ul>
+              <li>Upload photos, videos, and GIFs into the piano-style media slots.</li>
+              <li>GIFs loop automatically and are held until loaded so black placeholder frames are less likely to appear.</li>
+              <li><strong>Add Source Frame</strong> duplicates the currently active live source or media source into another mapped frame.</li>
+              <li><strong>Frame 1–4</strong> buttons select which mapped frame you are editing.</li>
+              <li><strong>Swap Frames</strong> rotates the assigned sources between active mapped frames while preserving each frame’s dimensions and shape.</li>
+            </ul>
+          </div>
+
+          <div class="guideSection">
+            <h3>6) Selecting, copying, pasting, and undoing mapped frames</h3>
+            <ul>
+              <li>While the Map panel is active, tap a mapped frame on screen to select it for editing.</li>
+              <li>With a mapped frame selected, press <strong>⌘/Ctrl + C</strong> to copy that frame.</li>
+              <li>Press <strong>⌘/Ctrl + V</strong> to paste it into the next available mapped-frame slot.</li>
+              <li>Press <strong>⌘/Ctrl + Z</strong> to undo mapping actions, and <strong>⌘/Ctrl + Shift + Z</strong> or <strong>⌘/Ctrl + Y</strong> to redo them.</li>
+              <li>Undo / redo in mapping mode is designed for map placement, point edits, zoom/pan/squish adjustments, trace actions, frame duplication, and frame clearing.</li>
+            </ul>
+          </div>
+
+          <div class="guideSection">
+            <h3>7) Keyboard layout basics</h3>
+            <div class="guideGrid">
+              <div class="guideChip"><strong>K</strong>Show / hide the keyboard guide.</div>
+              <div class="guideChip"><strong>A</strong>Open map mode. <strong>Shift + A</strong> traces the dominant subject.</div>
+              <div class="guideChip"><strong>D + Arrows</strong>Move the selected mapping point.</div>
+              <div class="guideChip"><strong>V + Arrows</strong>Pan the content inside the mapped frame.</div>
+              <div class="guideChip"><strong>X + Arrows</strong>Squish / stretch the content.</div>
+              <div class="guideChip"><strong>Z + +/-</strong>Zoom the content inside the frame.</div>
+              <div class="guideChip"><strong>Tab / Shift+Tab</strong>Cycle through mapped frames.</div>
+              <div class="guideChip"><strong>T</strong>Swap sources across active mapped frames.</div>
+            </div>
+          </div>
+
+          <div class="guideSection">
+            <h3>8) Exporting and live use</h3>
+            <ul>
+              <li>Use <strong>Record</strong> to capture the visual output together with audio when the browser supports it.</li>
+              <li>Use <strong>Snapshot</strong> to save a still PNG frame.</li>
+              <li>When projecting, hide the UI and control the app from a keyboard for cleaner output.</li>
+              <li>On iPhone / iPad, browser-level system indicators may still appear depending on Safari limitations. This build uses the strongest available fullscreen and standalone web-app settings, but iOS may still keep the status area visible.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="guideFooter">
+          <button id="guideHomeButton" class="ghostButton" type="button">Home</button>
+          <button id="guideLaunchButton" class="primaryButton" type="button">Launch</button>
         </div>
       </div>
     </section>
@@ -995,6 +1223,7 @@
         <strong>Controls</strong>
         <div>
           <button id="keysButton" class="miniButton" title="Keyboard shortcuts">Keys</button>
+          <button id="helpButton" class="miniButton" title="Help and how-to guide">Help</button>
           <button id="mapButton" class="miniButton mapButton" title="Projection mapping">Map</button>
           <button id="fullButton" class="miniButton" title="True fullscreen">Full</button>
           <button id="resetNormalButton" class="miniButton" title="Return to smooth normal mode">Normal</button>
@@ -1088,6 +1317,13 @@
             <button id="mapEditButton" class="ghostButton active">Edit Frame</button>
             <button id="mapResetButton" class="ghostButton">Reset</button>
           </div>
+          <div class="sectionTitle" style="margin-top:14px;">Subject trace <span>capture frame to map</span></div>
+          <div class="buttonGrid three">
+            <button id="traceSubjectButton" class="ghostButton traceButton">Trace Subject</button>
+            <button id="traceTightButton" class="ghostButton">Tight Trace</button>
+            <button id="traceBoxButton" class="ghostButton">Box Trace</button>
+          </div>
+          <div class="mapHint" id="traceStatusText">Trace captures the active camera/photo/video/GIF frame, detects the strongest subject region, and turns it into an editable custom mapping shape.</div>
           <div class="sectionTitle" style="margin-top:14px;">Shape <span>fully adjustable</span></div>
           <div class="buttonGrid five">
             <button id="shapeCircleButton" class="ghostButton shapeButton">Circle</button>
@@ -1239,6 +1475,7 @@
 
         <div class="keyGroup cat-map">Projection mapping</div>
         <div class="keyCombo cat-map"><kbd>A</kbd></div><div>Open the Map panel and snap into keyboard mapping mode.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>A</kbd></div><div>Trace the dominant subject in the current frame and apply it as an editable custom mapping shape.</div>
         <div class="keyCombo cat-map"><kbd>Arrows</kbd></div><div>Step through mapping points when no modifier is held.</div>
         <div class="keyCombo cat-map"><kbd>D</kbd> + <kbd>Arrows</kbd></div><div>Move / crop the selected mapping point.</div>
         <div class="keyCombo cat-map"><kbd>V</kbd> + <kbd>Arrows</kbd></div><div>Pan the active photo / video / camera feed inside the mapped frame.</div>
@@ -1258,9 +1495,9 @@
 
         <div class="keyGroup cat-system">System + clipboard</div>
         <div class="keyCombo cat-system"><kbd>Space</kbd></div><div>Pause / resume the visual engine.</div>
-        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>C</kbd></div><div>Copy the current preset JSON.</div>
-        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>V</kbd></div><div>Paste a preset JSON.</div>
-        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd></div><div>Undo.</div>
+        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>C</kbd></div><div>Copy the selected mapped frame when map editing is active; otherwise copy the current preset JSON.</div>
+        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>V</kbd></div><div>Paste / duplicate a copied mapped frame in map mode; otherwise paste a preset JSON.</div>
+        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd></div><div>Undo. In map mode this prioritizes frame placement, trace, zoom/pan/squish, and frame duplication actions.</div>
         <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></div><div>Redo on Mac-style keyboards.</div>
         <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Y</kbd></div><div>Alternate redo shortcut.</div>
       </div>
@@ -1351,6 +1588,10 @@
       let undoStack = [];
       let redoStack = [];
       let isApplyingHistory = false;
+      let mapUndoStack = [];
+      let mapRedoStack = [];
+      let frameClipboard = null;
+      let pendingLaunchMode = "live";
       let lastRange = null;
       let mapCustomPoints = [];
       let mapDrag = null;
@@ -1399,6 +1640,8 @@
       const sourceCanvas = document.getElementById("sourceCanvas");
       const sourceCtx = sourceCanvas.getContext("2d", { willReadFrequently: true });
       const scratchCanvas = document.getElementById("scratchCanvas");
+      const traceCanvas = document.createElement("canvas");
+      const traceCtx = traceCanvas.getContext("2d", { willReadFrequently: true });
 
       const sliderShortcutMap = {
         q: "primaryMix",
@@ -1441,6 +1684,7 @@
       const homeMotionCanvas = document.getElementById("homeMotionCanvas");
       const homeMotionCtx = homeMotionCanvas.getContext("2d");
       const homeScreen = document.getElementById("homeScreen");
+      const guideScreen = document.getElementById("guideScreen");
       const loaderScreen = document.getElementById("loaderScreen");
       const controlDock = document.getElementById("controlDock");
       const cheatSheet = document.getElementById("cheatSheet");
@@ -1518,6 +1762,8 @@
         const cy = h / 2;
         const boxW = w * 0.72;
         const boxH = h * 0.58;
+        const orbX = cx - boxW * 0.72;
+        const orbY = cy - boxH * 0.18;
         const framePoints = [];
         const count = 180;
         for (let i = 0; i < count; i++) {
@@ -1559,8 +1805,27 @@
           color: colors[i % colors.length],
           phase: rand(0, Math.PI * 2)
         }));
+        const projectedFrameBits = Array.from({ length: 92 }, (_, i) => ({
+          progress: Math.random(),
+          speed: rand(0.0022, 0.0068),
+          size: rand(1.8, 4.2),
+          alpha: rand(0.45, 0.95),
+          targetIndex: i % count,
+          wobble: rand(0.8, 2.1),
+          phase: rand(0, Math.PI * 2)
+        }));
+        const projectedInnerBits = Array.from({ length: 48 }, (_, i) => ({
+          progress: Math.random(),
+          speed: rand(0.0036, 0.0086),
+          size: rand(1.6, 3.8),
+          alpha: rand(0.38, 0.92),
+          targetIndex: i % bounceBits.length,
+          wobble: rand(0.7, 1.7),
+          phase: rand(0, Math.PI * 2),
+          color: colors[i % colors.length]
+        }));
         homeMotionState = {
-          cx, cy, boxW, boxH, framePoints, bounceBits,
+          cx, cy, boxW, boxH, orbX, orbY, framePoints, bounceBits, projectedFrameBits, projectedInnerBits,
           start: performance.now(),
           lastMiniCycle: performance.now(),
           miniBoxes: [
@@ -1581,6 +1846,10 @@
         const cy = state.cy = h / 2;
         state.boxW = w * 0.72;
         state.boxH = h * 0.58;
+        state.orbX = cx - state.boxW * 0.72;
+        state.orbY = cy - state.boxH * 0.18;
+        const orbX = state.orbX;
+        const orbY = state.orbY;
         ctx2.setTransform(1, 0, 0, 1, 0, 0);
         ctx2.clearRect(0, 0, w, h);
         ctx2.fillStyle = 'rgba(2,8,8,0.28)';
@@ -1591,8 +1860,41 @@
         ctx2.fillStyle = grad;
         ctx2.fillRect(0, 0, w, h);
 
+        const beamGrad = ctx2.createLinearGradient(orbX, orbY, cx, cy);
+        beamGrad.addColorStop(0, 'rgba(87,255,231,0.20)');
+        beamGrad.addColorStop(0.55, 'rgba(87,255,231,0.06)');
+        beamGrad.addColorStop(1, 'rgba(87,255,231,0.01)');
+        ctx2.save();
+        ctx2.beginPath();
+        ctx2.moveTo(orbX, orbY - 12);
+        ctx2.lineTo(cx - state.boxW * 0.52, cy - state.boxH * 0.40);
+        ctx2.lineTo(cx + state.boxW * 0.08, cy - state.boxH * 0.28);
+        ctx2.lineTo(cx + state.boxW * 0.06, cy + state.boxH * 0.02);
+        ctx2.lineTo(cx - state.boxW * 0.48, cy + state.boxH * 0.10);
+        ctx2.closePath();
+        ctx2.fillStyle = beamGrad;
+        ctx2.filter = 'blur(10px)';
+        ctx2.fill();
+        ctx2.restore();
+
         const frameProgress = Math.min(1, (now - state.start) / 1800);
         const frameGlow = 0.7 + Math.sin(now * 0.004) * 0.18;
+        state.projectedFrameBits.forEach((bit, i) => {
+          bit.progress += bit.speed;
+          if (bit.progress > 1) bit.progress -= 1;
+          const target = state.framePoints[bit.targetIndex % state.framePoints.length];
+          const tx = target.tx;
+          const ty = target.ty;
+          const curveX = lerp(orbX, tx, bit.progress) + Math.sin(now * 0.006 + bit.phase) * bit.wobble * 6 * (1 - bit.progress);
+          const curveY = lerp(orbY, ty, bit.progress) + Math.cos(now * 0.005 + bit.phase) * bit.wobble * 4 * (1 - bit.progress);
+          const alpha = bit.alpha * (0.36 + (1 - bit.progress) * 0.64);
+          const size = bit.size * (0.62 + bit.progress * 0.52);
+          ctx2.fillStyle = `rgba(87,255,231,${alpha})`;
+          ctx2.shadowColor = 'rgba(87,255,231,0.95)';
+          ctx2.shadowBlur = 12;
+          ctx2.fillRect(curveX - size / 2, curveY - size / 2, size, size);
+        });
+
         state.framePoints.forEach((p, i) => {
           const local = clamp((frameProgress - p.delay) / (1 - p.delay), 0, 1);
           const ease = 1 - Math.pow(1 - local, 3);
@@ -1613,6 +1915,22 @@
         const cycle = ((now - state.start) % 2800) / 2800;
         const assemblePhase = cycle < 0.54 ? cycle / 0.54 : 1;
         const explodePhase = cycle > 0.58 ? (cycle - 0.58) / 0.42 : 0;
+
+        state.projectedInnerBits.forEach(bit => {
+          bit.progress += bit.speed;
+          if (bit.progress > 1) bit.progress -= 1;
+          const target = state.bounceBits[bit.targetIndex % state.bounceBits.length];
+          const tx = target.x;
+          const ty = target.y;
+          const px = lerp(orbX + 8, tx, bit.progress) + Math.sin(now * 0.008 + bit.phase) * bit.wobble * 5 * (1 - bit.progress);
+          const py = lerp(orbY + 2, ty, bit.progress) + Math.cos(now * 0.007 + bit.phase) * bit.wobble * 3 * (1 - bit.progress);
+          const alpha = bit.alpha * (0.32 + (1 - bit.progress) * 0.68);
+          const size = bit.size * (0.70 + bit.progress * 0.40);
+          ctx2.fillStyle = bit.color.replace(/0\.9\d\)/, `${alpha.toFixed(2)})`).replace(/0\.95\)/, `${alpha.toFixed(2)})`);
+          ctx2.shadowColor = bit.color;
+          ctx2.shadowBlur = 10;
+          ctx2.fillRect(px - size / 2, py - size / 2, size, size);
+        });
 
         state.bounceBits.forEach((bit, i) => {
           let target = null;
@@ -1650,6 +1968,26 @@
         ctx2.strokeStyle = `rgba(87,255,231,${ringAlpha})`;
         ctx2.lineWidth = Math.max(2, w * 0.0035);
         ctx2.strokeRect(cx - state.boxW / 2 + 4, cy - state.boxH / 2 + 4, state.boxW - 8, state.boxH - 8);
+
+        const orbPulse = 0.92 + Math.sin(now * 0.008) * 0.08;
+        const orbGrad = ctx2.createRadialGradient(orbX, orbY, 0, orbX, orbY, Math.max(22, w * 0.065));
+        orbGrad.addColorStop(0, 'rgba(255,255,255,0.98)');
+        orbGrad.addColorStop(0.18, 'rgba(170,255,245,0.98)');
+        orbGrad.addColorStop(0.40, 'rgba(87,255,231,0.72)');
+        orbGrad.addColorStop(0.72, 'rgba(87,255,231,0.18)');
+        orbGrad.addColorStop(1, 'rgba(87,255,231,0)');
+        ctx2.fillStyle = orbGrad;
+        ctx2.beginPath();
+        ctx2.arc(orbX, orbY, Math.max(18, w * 0.038), 0, Math.PI * 2);
+        ctx2.fill();
+        ctx2.save();
+        ctx2.shadowColor = 'rgba(180,255,248,0.96)';
+        ctx2.shadowBlur = 26;
+        ctx2.fillStyle = 'rgba(255,255,255,0.96)';
+        ctx2.beginPath();
+        ctx2.arc(orbX, orbY, Math.max(5.5, w * 0.010) * orbPulse, 0, Math.PI * 2);
+        ctx2.fill();
+        ctx2.restore();
       }
 
       function startHomeMotionLoop() {
@@ -1889,6 +2227,7 @@
       }
 
       function addCameraClone() {
+        pushMapHistory();
         const next = cameraCloneSlots.findIndex(slot => !slot);
         const index = next === -1 ? 0 : next;
         const descriptor = getCurrentEditableSourceDescriptor();
@@ -1923,6 +2262,7 @@
       }
 
       function swapMappedFrameSources() {
+        pushMapHistory();
         const activeFrames = cameraCloneSlots
           .map((slot, index) => ({ slot, index }))
           .filter(entry => entry.slot && entry.slot.projectionState && entry.slot.projectionState.mapEnabled !== false);
@@ -1951,6 +2291,7 @@
           showToast('No clone selected.');
           return;
         }
+        pushMapHistory();
         cameraCloneSlots[activeCloneSlot] = null;
         activeSourceMode = 'camera';
         applyProjectionStatePayload(cameraProjectionState || null);
@@ -2177,6 +2518,213 @@
         showPanel("visualPanel");
         renderMapOverlay();
         showToast("Returned to smooth normal camera mode.");
+      }
+
+      function setTraceStatus(message) {
+        const el = document.getElementById("traceStatusText");
+        if (el) el.textContent = message;
+      }
+
+      function drawActiveSourceForTrace() {
+        const activeSource = getActiveSourceElement();
+        const ratio = canvas.height / Math.max(1, canvas.width);
+        const tw = 260;
+        const th = Math.max(120, Math.round(tw * ratio));
+        traceCanvas.width = tw;
+        traceCanvas.height = th;
+        traceCtx.clearRect(0, 0, tw, th);
+        if (activeSource) {
+          const vw = activeSource.videoWidth || activeSource.naturalWidth || tw;
+          const vh = activeSource.videoHeight || activeSource.naturalHeight || th;
+          const sourceRatio = vw / vh;
+          const canvasRatio = tw / th;
+          let sx = 0, sy = 0, sWidth = vw, sHeight = vh;
+          if (sourceRatio > canvasRatio) {
+            sWidth = vh * canvasRatio;
+            sx = (vw - sWidth) / 2;
+          } else {
+            sHeight = vw / canvasRatio;
+            sy = (vh - sHeight) / 2;
+          }
+          traceCtx.drawImage(activeSource, sx, sy, sWidth, sHeight, 0, 0, tw, th);
+        } else if (sourceCanvas.width && sourceCanvas.height) {
+          traceCtx.drawImage(sourceCanvas, 0, 0, tw, th);
+        } else {
+          return null;
+        }
+        return traceCtx.getImageData(0, 0, tw, th);
+      }
+
+      function percentile(values, pct) {
+        if (!values.length) return 0;
+        const sorted = Array.from(values).sort((a, b) => a - b);
+        const index = Math.max(0, Math.min(sorted.length - 1, Math.floor(sorted.length * pct)));
+        return sorted[index];
+      }
+
+      function traceDominantSubject(mode = "balanced") {
+        pushMapHistory();
+        prepareSourceFrame(performance.now());
+        const image = drawActiveSourceForTrace();
+        if (!image) {
+          setTraceStatus("Trace could not find an active camera/photo/video/GIF source.");
+          showToast("Trace needs an active source first.");
+          return;
+        }
+
+        const w = image.width;
+        const h = image.height;
+        const data = image.data;
+        const n = w * h;
+        const gray = new Float32Array(n);
+        const score = new Float32Array(n);
+        let total = 0;
+
+        for (let i = 0, p = 0; p < n; p++, i += 4) {
+          const r = data[i], g = data[i + 1], b = data[i + 2];
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          gray[p] = lum;
+          total += lum;
+          score[p] = (max - min) * 0.62;
+        }
+
+        const avg = total / Math.max(1, n);
+        for (let y = 1; y < h - 1; y++) {
+          for (let x = 1; x < w - 1; x++) {
+            const p = y * w + x;
+            const gx = Math.abs(gray[p + 1] - gray[p - 1]);
+            const gy = Math.abs(gray[p + w] - gray[p - w]);
+            const contrast = Math.abs(gray[p] - avg) * 0.32;
+            score[p] += (gx + gy) * 1.35 + contrast;
+          }
+        }
+
+        const sample = [];
+        for (let p = 0; p < n; p += 2) sample.push(score[p]);
+        const pct = mode === "tight" ? 0.90 : 0.84;
+        const threshold = Math.max(18, percentile(sample, pct));
+        const mask = new Uint8Array(n);
+        for (let p = 0; p < n; p++) {
+          const x = p % w;
+          const y = Math.floor(p / w);
+          const borderPenalty = x < 2 || y < 2 || x > w - 3 || y > h - 3;
+          mask[p] = !borderPenalty && score[p] >= threshold && gray[p] > 10 && gray[p] < 248 ? 1 : 0;
+        }
+
+        const visited = new Uint8Array(n);
+        const queue = new Int32Array(n);
+        let best = null;
+
+        for (let p = 0; p < n; p++) {
+          if (!mask[p] || visited[p]) continue;
+          let head = 0, tail = 0;
+          queue[tail++] = p;
+          visited[p] = 1;
+          let area = 0, minX = w, maxX = 0, minY = h, maxY = 0, sumX = 0, sumY = 0;
+          const pixels = [];
+
+          while (head < tail) {
+            const q = queue[head++];
+            const x = q % w;
+            const y = (q / w) | 0;
+            pixels.push(q);
+            area++;
+            sumX += x; sumY += y;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+            const neighbors = [q - 1, q + 1, q - w, q + w];
+            for (const nb of neighbors) {
+              if (nb < 0 || nb >= n || visited[nb] || !mask[nb]) continue;
+              const nx = nb % w;
+              const ny = (nb / w) | 0;
+              if (Math.abs(nx - x) + Math.abs(ny - y) !== 1) continue;
+              visited[nb] = 1;
+              queue[tail++] = nb;
+            }
+          }
+
+          if (area < Math.max(48, n * 0.002)) continue;
+          const cx = sumX / area;
+          const cy = sumY / area;
+          const centerWeight = 1 - Math.min(0.55, Math.hypot(cx / w - 0.5, cy / h - 0.5));
+          const boxArea = Math.max(1, (maxX - minX + 1) * (maxY - minY + 1));
+          const fillWeight = Math.min(1.4, area / boxArea + 0.45);
+          const rank = area * centerWeight * fillWeight;
+          if (!best || rank > best.rank) best = { area, minX, maxX, minY, maxY, cx, cy, pixels, rank };
+        }
+
+        if (!best) {
+          setTraceStatus("Trace did not find a strong subject. Try increasing lighting or using Box Trace.");
+          showToast("No dominant subject detected.");
+          return;
+        }
+
+        const pad = mode === "tight" ? 0.025 : 0.045;
+        const minX = clamp(best.minX / w - pad, 0.01, 0.99);
+        const maxX = clamp(best.maxX / w + pad, 0.01, 0.99);
+        const minY = clamp(best.minY / h - pad, 0.01, 0.99);
+        const maxY = clamp(best.maxY / h + pad, 0.01, 0.99);
+
+        let contour = [];
+        if (mode === "box") {
+          contour = [
+            { x: minX, y: minY, fixed: true },
+            { x: maxX, y: minY, fixed: true },
+            { x: maxX, y: maxY, fixed: true },
+            { x: minX, y: maxY, fixed: true }
+          ];
+        } else {
+          const bins = mode === "tight" ? 18 : 14;
+          const far = Array.from({ length: bins }, () => null);
+          for (const p of best.pixels) {
+            const x = p % w;
+            const y = (p / w) | 0;
+            const dx = x - best.cx;
+            const dy = y - best.cy;
+            const angle = (Math.atan2(dy, dx) + Math.PI * 2) % (Math.PI * 2);
+            const bin = Math.min(bins - 1, Math.floor(angle / (Math.PI * 2) * bins));
+            const d = dx * dx + dy * dy;
+            if (!far[bin] || d > far[bin].d) far[bin] = { x, y, d, angle };
+          }
+          contour = far.filter(Boolean)
+            .sort((a, b) => a.angle - b.angle)
+            .map((p, index) => ({
+              x: clamp(p.x / w, 0.01, 0.99),
+              y: clamp(p.y / h, 0.01, 0.99),
+              fixed: index < 4
+            }));
+
+          if (contour.length < 6) {
+            contour = [
+              { x: minX, y: minY, fixed: true },
+              { x: maxX, y: minY, fixed: true },
+              { x: maxX, y: maxY, fixed: true },
+              { x: minX, y: maxY, fixed: true }
+            ];
+          }
+        }
+
+        settings.mapEnabled = true;
+        settings.mapShape = "custom";
+        settings.mapMode = "mask";
+        settings.mapFrameX = (minX + maxX) / 2;
+        settings.mapFrameY = (minY + maxY) / 2;
+        settings.mapFrameW = Math.max(0.08, maxX - minX);
+        settings.mapFrameH = Math.max(0.08, maxY - minY);
+        mapCustomPoints = contour;
+        mapEditorVisible = true;
+        mapCanvas.classList.add("editing");
+        updateControlsFromSettings();
+        saveCurrentProjectionToActiveSource();
+        renderMapOverlay();
+
+        const confidence = Math.round(Math.min(99, Math.max(30, (best.area / n) * 520)));
+        setTraceStatus(`Trace applied as a custom shape with ${contour.length} editable points. Estimated confidence: ${confidence}%. Fine-tune by dragging points.`);
+        showToast("Subject trace applied to the map frame.");
       }
 
       function defaultMapCustomPoints() {
@@ -2471,6 +3019,12 @@
       }
 
       function undo() {
+        if ((mapEditorVisible || keyboardMapMode || activeSourceMode === 'clone') && mapUndoStack.length) {
+          mapRedoStack.push(captureMapSnapshot());
+          restoreMapSnapshot(mapUndoStack.pop());
+          showToast("Map undo applied.");
+          return;
+        }
         if (!undoStack.length) return showToast("Nothing to undo yet.");
         redoStack.push({ ...settings });
         isApplyingHistory = true;
@@ -2481,6 +3035,12 @@
       }
 
       function redo() {
+        if ((mapEditorVisible || keyboardMapMode || activeSourceMode === 'clone') && mapRedoStack.length) {
+          mapUndoStack.push(captureMapSnapshot());
+          restoreMapSnapshot(mapRedoStack.pop());
+          showToast("Map redo applied.");
+          return;
+        }
         if (!redoStack.length) return showToast("Nothing to redo yet.");
         undoStack.push({ ...settings });
         isApplyingHistory = true;
@@ -2588,16 +3148,23 @@
         document.getElementById("secondaryToggleButton").addEventListener("click", () => toggleEffectLayer("secondary"));
         document.getElementById("normalQualityButton").addEventListener("click", toggleNormalQuality);
         document.getElementById("keysButton").addEventListener("click", () => cheatSheet.classList.toggle("hidden"));
+        document.getElementById("helpButton").addEventListener("click", () => showGuide((mediaStream || demoMode) ? "resume" : "live"));
         document.getElementById("mapButton").addEventListener("click", activateMapPanel);
         document.getElementById("fullButton").addEventListener("click", toggleTrueFullscreen);
         document.getElementById("resetNormalButton").addEventListener("click", normalizeToDefaultCameraView);
         document.getElementById("hideUIButton").addEventListener("click", toggleMasterUI);
         masterHideButton.addEventListener("click", toggleMasterUI);
+        document.getElementById("homeHelpButton").addEventListener("click", () => showGuide("live"));
+        document.getElementById("guideHomeButton").addEventListener("click", showHome);
+        document.getElementById("guideLaunchButton").addEventListener("click", launchFromGuide);
         document.getElementById("homeBugButton").addEventListener("click", reportBug);
         document.getElementById("appBugButton").addEventListener("click", reportBug);
         document.getElementById("mapEnabledButton").addEventListener("click", toggleMapEnabled);
         document.getElementById("mapEditButton").addEventListener("click", () => toggleMapEditor());
         document.getElementById("mapResetButton").addEventListener("click", () => { resetMapShape(); showToast("Map frame reset."); });
+        document.getElementById("traceSubjectButton").addEventListener("click", () => traceDominantSubject("balanced"));
+        document.getElementById("traceTightButton").addEventListener("click", () => traceDominantSubject("tight"));
+        document.getElementById("traceBoxButton").addEventListener("click", () => traceDominantSubject("box"));
         document.getElementById("shapeCircleButton").addEventListener("click", () => setMapShape("circle"));
         document.getElementById("shapeTriangleButton").addEventListener("click", () => setMapShape("triangle"));
         document.getElementById("shapeRectangleButton").addEventListener("click", () => setMapShape("rectangle"));
@@ -2629,7 +3196,7 @@
         document.getElementById("restartMediaButton").addEventListener("click", () => startRealMedia(true));
         document.getElementById("pauseButton").addEventListener("click", togglePause);
         document.getElementById("homeButton").addEventListener("click", showHome);
-        document.getElementById("startButton").addEventListener("click", () => startRealMedia(false));
+        document.getElementById("startButton").addEventListener("click", () => showGuide("live"));
         document.getElementById("demoButton").addEventListener("click", startDemo);
         document.getElementById("loaderPreviewButton").addEventListener("click", () => playLoader(() => {}));
         updateCloneButtons();
@@ -2681,6 +3248,8 @@
 
       function showHome() {
         homeScreen.classList.remove("hidden");
+        guideScreen.classList.add("hidden");
+        loaderScreen.classList.add("hidden");
         controlDock.classList.add("hidden");
         topBar.classList.add("hidden");
         cornerHint.classList.add("hidden");
@@ -2695,6 +3264,7 @@
 
       function showVisualizer() {
         homeScreen.classList.add("hidden");
+        guideScreen.classList.add("hidden");
         masterHideButton.classList.remove("hidden");
         updateMasterHideButton();
         if (masterUIHidden) {
@@ -2708,6 +3278,32 @@
         controlDock.classList.remove("collapsed");
         topBar.classList.remove("hidden");
         cornerHint.classList.remove("hidden");
+      }
+
+      function showGuide(mode = "live") {
+        pendingLaunchMode = mode;
+        homeScreen.classList.add("hidden");
+        guideScreen.classList.remove("hidden");
+        loaderScreen.classList.add("hidden");
+        controlDock.classList.add("hidden");
+        topBar.classList.add("hidden");
+        cornerHint.classList.add("hidden");
+        cheatSheet.classList.add("hidden");
+        masterHideButton.classList.add("hidden");
+        masterUIHidden = false;
+        updateMasterHideButton();
+      }
+
+      function launchFromGuide() {
+        guideScreen.classList.add("hidden");
+        playLoader(() => {
+          if (pendingLaunchMode === "resume") {
+            showVisualizer();
+            startEngine();
+            showToast("Returned to MARZview.");
+          } else if (pendingLaunchMode === "demo") startDemo();
+          else startRealMedia(false);
+        });
       }
 
       async function startRealMedia(restart = false) {
@@ -3066,6 +3662,7 @@
       }
 
       function nudgeKeyboardMapPoint(dx, dy) {
+        pushMapHistory();
         const handles = getMapHandlePoints();
         if (!handles.length) return;
         const index = ((keyboardMapSelectedIndex % handles.length) + handles.length) % handles.length;
@@ -3075,20 +3672,24 @@
       }
 
       function adjustMapContentZoom(delta) {
+        pushMapHistory();
         applySetting("mapContentZoom", clamp(Number(settings.mapContentZoom || 1) + delta, 0.25, 4), false);
       }
 
       function panMapContent(dx, dy) {
+        pushMapHistory();
         applySetting("mapContentX", clamp(Number(settings.mapContentX || 0) + dx, -1, 1), false);
         applySetting("mapContentY", clamp(Number(settings.mapContentY || 0) + dy, -1, 1), false);
       }
 
       function squishMapContent(dx, dy) {
+        pushMapHistory();
         applySetting("mapContentScaleX", clamp(Number(settings.mapContentScaleX || 1) + dx, 0.25, 3), false);
         applySetting("mapContentScaleY", clamp(Number(settings.mapContentScaleY || 1) + dy, 0.25, 3), false);
       }
 
       function resetMapContentTransform() {
+        pushMapHistory();
         applySetting("mapContentZoom", 1, false);
         applySetting("mapContentX", 0, false);
         applySetting("mapContentY", 0, false);
@@ -3102,6 +3703,17 @@
         mapCtx.setTransform(1, 0, 0, 1, 0, 0);
         mapCtx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
         if (!(settings.mapEnabled || mapEditorVisible)) return;
+        cameraCloneSlots.forEach((slot, index) => {
+          if (!slot || !slot.projectionState || !slot.projectionState.mapEnabled) return;
+          if (activeSourceMode === 'clone' && activeCloneSlot === index) return;
+          mapCtx.save();
+          buildProjectionPath(mapCtx, slot.projectionState, getProjectionPointsPixelsForState(slot.projectionState));
+          mapCtx.strokeStyle = 'rgba(87,255,231,0.38)';
+          mapCtx.lineWidth = Math.max(1.2, Math.min(mapCanvas.width, mapCanvas.height) * 0.0015);
+          mapCtx.setLineDash([7, 6]);
+          mapCtx.stroke();
+          mapCtx.restore();
+        });
         const points = getMapPointsPixels();
         const handlePoints = getMapHandlePoints();
         mapCtx.save();
@@ -3158,11 +3770,119 @@
         return { x: (event.clientX - rect.left) * scaleX, y: (event.clientY - rect.top) * scaleY };
       }
 
+      function pointInsideProjectionState(point, state) {
+        if (!state || !state.mapEnabled) return false;
+        mapCtx.save();
+        buildProjectionPath(mapCtx, state, getProjectionPointsPixelsForState(state));
+        const inside = mapCtx.isPointInPath(point.x, point.y);
+        mapCtx.restore();
+        return inside;
+      }
+
+      function findMappedFrameAtPoint(point) {
+        for (let i = cameraCloneSlots.length - 1; i >= 0; i--) {
+          const slot = cameraCloneSlots[i];
+          if (slot && slot.projectionState && pointInsideProjectionState(point, slot.projectionState)) return i;
+        }
+        return -1;
+      }
+
+      function cloneDeep(obj) {
+        return obj == null ? obj : JSON.parse(JSON.stringify(obj));
+      }
+
+      function captureMapSnapshot() {
+        saveCurrentProjectionToActiveSource();
+        return {
+          settings: { ...settings },
+          mapCustomPoints: cloneDeep(mapCustomPoints),
+          activeSourceMode,
+          activeMediaSlot,
+          activeCloneSlot,
+          cameraProjectionState: cloneDeep(cameraProjectionState),
+          cameraCloneSlots: cloneDeep(cameraCloneSlots)
+        };
+      }
+
+      function pushMapHistory() {
+        if (isApplyingHistory) return;
+        mapUndoStack.push(captureMapSnapshot());
+        mapUndoStack = mapUndoStack.slice(-80);
+        mapRedoStack.length = 0;
+      }
+
+      function restoreMapSnapshot(snapshot) {
+        if (!snapshot) return;
+        isApplyingHistory = true;
+        settings = { ...settings, ...snapshot.settings };
+        mapCustomPoints = cloneDeep(snapshot.mapCustomPoints) || defaultMapCustomPoints();
+        activeSourceMode = snapshot.activeSourceMode || "camera";
+        activeMediaSlot = Number(snapshot.activeMediaSlot || 0);
+        activeCloneSlot = Number(snapshot.activeCloneSlot || 0);
+        cameraProjectionState = cloneDeep(snapshot.cameraProjectionState);
+        cameraCloneSlots = cloneDeep(snapshot.cameraCloneSlots) || Array.from({ length: 4 }, () => null);
+        updateControlsFromSettings();
+        updateMediaSlotButtons();
+        updateCloneButtons();
+        renderMapOverlay();
+        isApplyingHistory = false;
+      }
+
+      async function copySelectedMappedFrame() {
+        if (activeSourceMode !== "clone" || !cameraCloneSlots[activeCloneSlot]) {
+          showToast("Tap a mapped frame first, then copy it.");
+          return false;
+        }
+        frameClipboard = cloneDeep(cameraCloneSlots[activeCloneSlot]);
+        try {
+          await navigator.clipboard.writeText(JSON.stringify({ type: "MARZVIEW_FRAME", payload: frameClipboard }));
+        } catch (e) {}
+        showToast(`Mapped frame ${activeCloneSlot + 1} copied.`);
+        return true;
+      }
+
+      async function pasteMappedFrame() {
+        let clip = frameClipboard;
+        if (!clip) {
+          try {
+            const text = await navigator.clipboard.readText();
+            const parsed = JSON.parse(text);
+            if (parsed && parsed.type === "MARZVIEW_FRAME") clip = parsed.payload;
+          } catch (e) {}
+        }
+        if (!clip) {
+          showToast("No mapped frame copy found yet.");
+          return false;
+        }
+        pushMapHistory();
+        let target = cameraCloneSlots.findIndex(slot => !slot);
+        if (target === -1) target = Math.min(activeCloneSlot + 1, cameraCloneSlots.length - 1);
+        cameraCloneSlots[target] = cloneDeep(clip);
+        activateCameraClone(target);
+        showToast(`Mapped frame pasted into slot ${target + 1}.`);
+        return true;
+      }
+
+      function installScrollLock() {
+        const isScrollable = target => !!(target && target.closest && target.closest('.dockBody, .guideBody, #cheatSheet'));
+        const blocker = event => {
+          if (!isScrollable(event.target)) event.preventDefault();
+        };
+        document.addEventListener('touchmove', blocker, { passive: false });
+        document.addEventListener('wheel', blocker, { passive: false });
+      }
+
       function setupMapInteractions() {
         mapCanvas.addEventListener('pointerdown', event => {
           if (!mapEditorVisible) return;
           const point = getEventCanvasPoint(event);
           mapPointerCache.set(event.pointerId, point);
+          const tappedFrame = findMappedFrameAtPoint(point);
+          if (tappedFrame !== -1 && (activeSourceMode !== 'clone' || activeCloneSlot !== tappedFrame)) {
+            activateCameraClone(tappedFrame);
+            renderMapOverlay();
+            return;
+          }
           if (mapPointerCache.size === 2) {
             const pts = Array.from(mapPointerCache.values());
             mapPinch = { distance: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1, zoom: Number(settings.mapContentZoom || 1) };
@@ -3175,7 +3895,8 @@
             mode: 'none',
             index: hit,
             start: point,
-            moved: false
+            moved: false,
+            historyPushed: false
           };
           if (hit !== -1) {
             mapDrag.mode = 'point';
@@ -3200,6 +3921,7 @@
           if (mapPinch && mapPointerCache.size >= 2) {
             const pts = Array.from(mapPointerCache.values());
             const nextDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+            if (!mapDrag || !mapDrag.historyPushed) { pushMapHistory(); if (mapDrag) mapDrag.historyPushed = true; }
             settings.mapContentZoom = clamp(mapPinch.zoom * (nextDistance / mapPinch.distance), 0.25, 4);
             updateControlsFromSettings();
             renderMapOverlay();
@@ -3210,9 +3932,11 @@
           const dy = point.y - mapDrag.start.y;
           if (Math.abs(dx) > 2 || Math.abs(dy) > 2) mapDrag.moved = true;
           if (mapDrag.mode === 'point' && mapDrag.moved) {
+            if (!mapDrag.historyPushed) { pushMapHistory(); mapDrag.historyPushed = true; }
             dragMapHandle(mapDrag.index, point);
             renderMapOverlay();
           } else if (mapDrag.mode === 'move') {
+            if (!mapDrag.historyPushed) { pushMapHistory(); mapDrag.historyPushed = true; }
             moveMapShape(dx, dy);
             mapDrag.start = point;
             renderMapOverlay();
@@ -3225,8 +3949,10 @@
           if (!mapDrag || mapDrag.pointerId !== event.pointerId) return;
           const point = getEventCanvasPoint(event);
           if (mapDrag.mode === 'point' && !mapDrag.moved && settings.mapShape === 'custom' && mapDrag.index >= 4) {
+            pushMapHistory();
             mapCustomPoints.splice(mapDrag.index, 1);
           } else if (mapDrag.mode === 'create' && !mapDrag.moved && settings.mapShape === 'custom') {
+            pushMapHistory();
             const nearest = getNearestMapSegment(point);
             mapCustomPoints.splice(nearest.index, 0, { x: clamp(point.x / canvas.width, 0, 1), y: clamp(point.y / canvas.height, 0, 1), fixed: false });
           }
@@ -3760,12 +4486,14 @@
 
           if ((event.ctrlKey || event.metaKey) && key === "c") {
             event.preventDefault();
-            copyPreset();
+            if (mapEditorVisible || keyboardMapMode || activeSourceMode === 'clone') copySelectedMappedFrame();
+            else copyPreset();
             return;
           }
           if ((event.ctrlKey || event.metaKey) && key === "v") {
             event.preventDefault();
-            pastePreset();
+            if (mapEditorVisible || keyboardMapMode || activeSourceMode === 'clone') pasteMappedFrame();
+            else pastePreset();
             return;
           }
           if ((event.ctrlKey || event.metaKey) && key === "z") {
@@ -3776,6 +4504,13 @@
           if ((event.ctrlKey || event.metaKey) && key === "y") {
             event.preventDefault();
             redo();
+            return;
+          }
+
+          if (key === 'a' && event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            event.preventDefault();
+            activateMapPanel();
+            traceDominantSubject("balanced");
             return;
           }
 
@@ -4033,6 +4768,7 @@
         setupControls();
         setupKeyboard();
         setupMapInteractions();
+        installScrollLock();
         startHomeMotionLoop();
         window.addEventListener("resize", () => {
           resizeCanvas();
