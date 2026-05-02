@@ -607,6 +607,43 @@
       font-size: 0.75rem;
     }
 
+    #masterHideButton {
+      position: fixed;
+      top: calc(12px + var(--safe-top));
+      right: 12px;
+      z-index: 95;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 999px;
+      min-width: 78px;
+      padding: 9px 12px;
+      background: rgba(96, 100, 104, 0.72);
+      color: rgba(234, 255, 251, 0.92);
+      font-size: 0.72rem;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 0 18px rgba(0, 0, 0, 0.34);
+      transition: opacity 160ms ease, transform 160ms ease, width 160ms ease, min-width 160ms ease;
+    }
+
+    #masterHideButton.dot {
+      width: 15px;
+      min-width: 15px;
+      height: 15px;
+      padding: 0;
+      opacity: 0.3;
+      color: transparent;
+      text-indent: -9999px;
+      overflow: hidden;
+      background: rgba(190, 195, 200, 1);
+      border-color: rgba(255, 255, 255, 0.38);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.14);
+    }
+
+    #masterHideButton.hidden {
+      display: none;
+    }
+
     #toast {
       position: fixed;
       left: 50%;
@@ -740,7 +777,7 @@
       <div id="statusPill" class="statusPill">Ready. Press <kbd>K</kbd> for keyboard controls.</div>
     </div>
 
-    <div id="cornerHint" class="cornerHint hidden">Bluetooth keyboard ready<br/>K = cheat sheet • E/V/X/C = panels</div>
+    <div id="cornerHint" class="cornerHint hidden">Bluetooth keyboard ready<br/>K = keys • U = fullscreen visual • E/V/X/C = panels</div>
 
     <section id="homeScreen" class="screen" aria-label="Home screen">
       <div class="homeCard">
@@ -773,6 +810,7 @@
         <strong>Controls</strong>
         <div>
           <button id="keysButton" class="miniButton" title="Keyboard shortcuts">Keys</button>
+          <button id="hideUIButton" class="miniButton" title="Hide interface">Hide UI</button>
           <button id="randomizeButton" class="miniButton" title="Randomize look">Dice</button>
           <button id="appBugButton" class="miniButton" title="Report a bug">Bug</button>
           <button id="collapseButton" class="miniButton" title="Collapse controls">Hide</button>
@@ -898,32 +936,55 @@
       <div class="keyGrid">
         <div class="keyGroup cat-nav">Navigation + panels</div>
         <div class="keyCombo cat-nav"><kbd>K</kbd></div><div>Show / hide this color-coded shortcut guide.</div>
-        <div class="keyCombo cat-nav"><kbd>E</kbd> <kbd>V</kbd> <kbd>X</kbd> <kbd>C</kbd></div><div>Open Effects, Visual, Export, or Camera panel.</div>
-        <div class="keyCombo cat-nav"><kbd>P</kbd></div><div>Collapse / expand the controls.</div>
+        <div class="keyCombo cat-nav"><kbd>U</kbd></div><div>Master hide/show. Fullscreen visual mode leaves only the tiny gray dot in the top-right corner.</div>
+        <div class="keyCombo cat-nav"><kbd>E</kbd></div><div>Open Effects panel.</div>
+        <div class="keyCombo cat-nav"><kbd>V</kbd></div><div>Open Visual panel.</div>
+        <div class="keyCombo cat-nav"><kbd>X</kbd></div><div>Open Export panel.</div>
+        <div class="keyCombo cat-nav"><kbd>C</kbd></div><div>Open Camera panel.</div>
+        <div class="keyCombo cat-nav"><kbd>P</kbd></div><div>Collapse / expand the control dock.</div>
+        <div class="keyCombo cat-nav"><kbd>Esc</kbd></div><div>Hide the shortcut guide.</div>
 
         <div class="keyGroup cat-effects">Effects + layers</div>
         <div class="keyCombo cat-effects"><kbd>1</kbd>–<kbd>0</kbd></div><div>Change primary effect. <kbd>1</kbd> is Normal Camera.</div>
         <div class="keyCombo cat-effects"><kbd>Shift</kbd> + <kbd>1</kbd>–<kbd>0</kbd></div><div>Change secondary effect. <kbd>Shift</kbd> + <kbd>1</kbd> is Normal Camera.</div>
-        <div class="keyCombo cat-effects"><kbd>[</kbd></div><div>Primary effect layer on / off. When both layers are off, MARZview falls back to Normal Camera.</div>
-        <div class="keyCombo cat-effects"><kbd>]</kbd></div><div>Secondary effect layer on / off. When both layers are off, MARZview falls back to Normal Camera.</div>
-        <div class="keyCombo cat-effects"><kbd>B</kbd></div><div>Randomize settings.</div>
+        <div class="keyCombo cat-effects"><kbd>[</kbd></div><div>Primary layer on / off. If both layers are off, Normal Camera fallback activates.</div>
+        <div class="keyCombo cat-effects"><kbd>]</kbd></div><div>Secondary layer on / off. If both layers are off, Normal Camera fallback activates.</div>
+        <div class="keyCombo cat-effects"><kbd>N</kbd></div><div>Toggle Normal Camera quality: Sharp / Lo-Fi.</div>
+        <div class="keyCombo cat-effects"><kbd>Shift</kbd> + <kbd>B</kbd></div><div>Randomize the visual settings.</div>
 
-        <div class="keyGroup cat-camera">Camera + view</div>
-        <div class="keyCombo cat-camera"><kbd>Arrows</kbd></div><div>Adjust the focused slider. Hold Shift for larger jumps.</div>
-        <div class="keyCombo cat-camera"><kbd>N</kbd></div><div>Toggle Normal Camera quality: sharp clean source or lower-bitrate source view.</div>
+        <div class="keyGroup cat-camera">Slider focus controls</div>
+        <div class="keyCombo cat-camera"><kbd>Hold Q</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Primary Mix.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold W</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Secondary Mix.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold I</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Intensity.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold M</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Mic Sensitivity.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold G</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Glow.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold T</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Texture.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold B</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Visual Bitrate.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold L</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Trail length.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold O</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Edge Boost.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold H</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Color Drift.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold F</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Feedback amount.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold J</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Zoom Warp.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold Y</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Camera Ghost.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold ;</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Export Bitrate.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold '</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>FPS.</div>
+        <div class="keyCombo cat-camera"><kbd>Shift</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Larger adjustment steps for whichever slider is active.</div>
 
         <div class="keyGroup cat-capture">Capture</div>
         <div class="keyCombo cat-capture"><kbd>R</kbd></div><div>Start / stop recording.</div>
         <div class="keyCombo cat-capture"><kbd>S</kbd></div><div>Save a PNG snapshot.</div>
 
-        <div class="keyGroup cat-system">System</div>
-        <div class="keyCombo cat-system"><kbd>Space</kbd></div><div>Pause / resume visual engine.</div>
+        <div class="keyGroup cat-system">System + clipboard</div>
+        <div class="keyCombo cat-system"><kbd>Space</kbd></div><div>Pause / resume the visual engine.</div>
         <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>C</kbd></div><div>Copy the current preset JSON.</div>
         <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>V</kbd></div><div>Paste preset JSON.</div>
-        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd></div><div>Undo. Add Shift for redo on Mac-style keyboards.</div>
+        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd></div><div>Undo setting change.</div>
+        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></div><div>Redo on Mac-style keyboards.</div>
+        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Y</kbd></div><div>Redo alternate shortcut.</div>
       </div>
     </aside>
 
+    <button id="masterHideButton" class="hidden" type="button" aria-label="Show interface">UI</button>
     <div id="toast" role="status" aria-live="polite"></div>
   </div>
 
@@ -997,9 +1058,12 @@
       let redoStack = [];
       let isApplyingHistory = false;
       let lastRange = null;
+      let activeShortcutSetting = null;
+      let activeShortcutKey = null;
       let isRunning = false;
       let isPaused = false;
       let demoMode = false;
+      let masterUIHidden = false;
       let mediaStream = null;
       let audioContext = null;
       let analyser = null;
@@ -1020,6 +1084,42 @@
       const sourceCanvas = document.getElementById("sourceCanvas");
       const sourceCtx = sourceCanvas.getContext("2d", { willReadFrequently: true });
       const scratchCanvas = document.getElementById("scratchCanvas");
+
+      const sliderShortcutMap = {
+        q: "primaryMix",
+        w: "secondaryMix",
+        i: "intensity",
+        m: "audioSensitivity",
+        g: "glow",
+        t: "texture",
+        b: "bitrate",
+        l: "trail",
+        o: "edgeBoost",
+        h: "colorDrift",
+        f: "feedback",
+        j: "zoom",
+        y: "cameraAlpha",
+        ";": "exportBitrate",
+        "'": "fps"
+      };
+
+      const sliderShortcutNames = {
+        primaryMix: "Primary Mix",
+        secondaryMix: "Secondary Mix",
+        intensity: "Intensity",
+        audioSensitivity: "Mic Sensitivity",
+        glow: "Glow",
+        texture: "Texture",
+        bitrate: "Visual Bitrate",
+        trail: "Trail",
+        edgeBoost: "Edge Boost",
+        colorDrift: "Color Drift",
+        feedback: "Feedback",
+        zoom: "Zoom Warp",
+        cameraAlpha: "Camera Ghost",
+        exportBitrate: "Export Bitrate",
+        fps: "FPS"
+      };
       const scratchCtx = scratchCanvas.getContext("2d", { willReadFrequently: true });
       const loaderCanvas = document.getElementById("loaderCanvas");
       const loaderCtx = loaderCanvas.getContext("2d");
@@ -1027,6 +1127,7 @@
       const loaderScreen = document.getElementById("loaderScreen");
       const controlDock = document.getElementById("controlDock");
       const cheatSheet = document.getElementById("cheatSheet");
+      const masterHideButton = document.getElementById("masterHideButton");
       const toast = document.getElementById("toast");
       const statusPill = document.getElementById("statusPill");
       const topBar = document.getElementById("topBar");
@@ -1252,7 +1353,7 @@
           ""
         ].join("\n");
         navigator.clipboard?.writeText(report).catch(() => {});
-        const mailto = `mailto:?subject=${encodeURIComponent("MARZview Bug Report")}&body=${encodeURIComponent(report)}`;
+        const mailto = `mailto:marzapp.co@gmail.com?subject=${encodeURIComponent("MARZview Bug Report")}&body=${encodeURIComponent(report)}`;
         window.location.href = mailto;
         showToast("Bug report template opened. A copy was also attempted to clipboard.");
       }
@@ -1309,6 +1410,8 @@
         document.getElementById("secondaryToggleButton").addEventListener("click", () => toggleEffectLayer("secondary"));
         document.getElementById("normalQualityButton").addEventListener("click", toggleNormalQuality);
         document.getElementById("keysButton").addEventListener("click", () => cheatSheet.classList.toggle("hidden"));
+        document.getElementById("hideUIButton").addEventListener("click", toggleMasterUI);
+        masterHideButton.addEventListener("click", toggleMasterUI);
         document.getElementById("homeBugButton").addEventListener("click", reportBug);
         document.getElementById("appBugButton").addEventListener("click", reportBug);
         document.getElementById("randomizeButton").addEventListener("click", randomizeSettings);
@@ -1344,16 +1447,51 @@
         showToast(isPaused ? "Visual engine paused." : "Visual engine running.");
       }
 
+      function updateMasterHideButton() {
+        masterHideButton.classList.toggle("dot", masterUIHidden);
+        masterHideButton.textContent = masterUIHidden ? "UI" : "Hide UI";
+        masterHideButton.setAttribute("aria-label", masterUIHidden ? "Show interface" : "Hide interface");
+        masterHideButton.title = masterUIHidden ? "Show interface" : "Hide interface";
+      }
+
+      function setMasterUIHidden(hidden) {
+        masterUIHidden = !!hidden;
+        controlDock.classList.toggle("hidden", masterUIHidden);
+        topBar.classList.toggle("hidden", masterUIHidden);
+        cornerHint.classList.toggle("hidden", masterUIHidden);
+        cheatSheet.classList.add("hidden");
+        masterHideButton.classList.remove("hidden");
+        updateMasterHideButton();
+      }
+
+      function toggleMasterUI() {
+        if (!homeScreen.classList.contains("hidden")) return;
+        setMasterUIHidden(!masterUIHidden);
+        showToast(masterUIHidden ? "Fullscreen visual mode. Keyboard controls still work." : "Interface restored.");
+      }
+
       function showHome() {
         homeScreen.classList.remove("hidden");
         controlDock.classList.add("hidden");
         topBar.classList.add("hidden");
         cornerHint.classList.add("hidden");
         cheatSheet.classList.add("hidden");
+        masterUIHidden = false;
+        masterHideButton.classList.add("hidden");
+        updateMasterHideButton();
       }
 
       function showVisualizer() {
         homeScreen.classList.add("hidden");
+        masterHideButton.classList.remove("hidden");
+        updateMasterHideButton();
+        if (masterUIHidden) {
+          controlDock.classList.add("hidden");
+          topBar.classList.add("hidden");
+          cornerHint.classList.add("hidden");
+          cheatSheet.classList.add("hidden");
+          return;
+        }
         controlDock.classList.remove("hidden");
         controlDock.classList.remove("collapsed");
         topBar.classList.remove("hidden");
@@ -2053,59 +2191,103 @@
         applySetting(range.dataset.setting, next);
       }
 
+      function focusSliderBySetting(setting, announce = true) {
+        const range = document.querySelector(`input[type="range"][data-setting="${setting}"]`);
+        if (!range) return null;
+        lastRange = range;
+        range.focus({ preventScroll: true });
+        if (announce) showToast(`${sliderShortcutNames[setting] || setting}: use ← / → to adjust.`);
+        return range;
+      }
+
+      function setActiveShortcut(key) {
+        const setting = sliderShortcutMap[key];
+        if (!setting) return false;
+        activeShortcutKey = key;
+        activeShortcutSetting = setting;
+        focusSliderBySetting(setting, true);
+        return true;
+      }
+
+      function clearActiveShortcut(key) {
+        if (key === activeShortcutKey) {
+          activeShortcutKey = null;
+          activeShortcutSetting = null;
+        }
+      }
+
       function setupKeyboard() {
         document.addEventListener("keydown", event => {
           const tag = (event.target && event.target.tagName || "").toLowerCase();
           const isTyping = ["input", "textarea", "select"].includes(tag) && event.target.type !== "range";
           if (isTyping && !event.ctrlKey && !event.metaKey) return;
 
-          if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c") {
+          const key = event.key.toLowerCase();
+
+          if ((event.ctrlKey || event.metaKey) && key === "c") {
             event.preventDefault();
             copyPreset();
             return;
           }
-          if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v") {
+          if ((event.ctrlKey || event.metaKey) && key === "v") {
             event.preventDefault();
             pastePreset();
             return;
           }
-          if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
+          if ((event.ctrlKey || event.metaKey) && key === "z") {
             event.preventDefault();
             if (event.shiftKey) redo(); else undo();
             return;
           }
-          if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "y") {
+          if ((event.ctrlKey || event.metaKey) && key === "y") {
             event.preventDefault();
             redo();
             return;
           }
 
-          const key = event.key.toLowerCase();
           const number = /^\d$/.test(event.key) ? Number(event.key) : null;
           if (number !== null) {
             event.preventDefault();
             selectEffectByNumber(number, event.shiftKey);
             return;
           }
+
+          if (key === "b" && event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            event.preventDefault();
+            randomizeSettings();
+            return;
+          }
+
+          if (!event.ctrlKey && !event.metaKey && !event.altKey && sliderShortcutMap[key]) {
+            event.preventDefault();
+            setActiveShortcut(key);
+            return;
+          }
+
           if (["arrowup", "arrowright", "arrowdown", "arrowleft"].includes(key)) {
             event.preventDefault();
-            const positive = key === "arrowup" || key === "arrowright";
-            adjustLastRange((positive ? 1 : -1) * (event.shiftKey ? 10 : 1));
+            if (activeShortcutSetting) {
+              const direction = (key === "arrowright" || key === "arrowup") ? 1 : -1;
+              adjustLastRange(direction * (event.shiftKey ? 10 : 1));
+            } else {
+              const positive = key === "arrowup" || key === "arrowright";
+              adjustLastRange((positive ? 1 : -1) * (event.shiftKey ? 10 : 1));
+            }
             return;
           }
 
           switch (key) {
-            case "k":
-              cheatSheet.classList.toggle("hidden");
-              event.preventDefault();
-              break;
+            case "k": cheatSheet.classList.toggle("hidden"); event.preventDefault(); break;
+            case "u": toggleMasterUI(); event.preventDefault(); break;
             case "e": showPanel("effectsPanel"); event.preventDefault(); break;
             case "v": showPanel("visualPanel"); event.preventDefault(); break;
             case "x": showPanel("exportPanel"); event.preventDefault(); break;
             case "c": showPanel("cameraPanel"); event.preventDefault(); break;
             case "r": toggleRecording(); event.preventDefault(); break;
             case "s": saveSnapshot(); event.preventDefault(); break;
-            case "b": randomizeSettings(); event.preventDefault(); break;
+            case "b":
+              if (event.shiftKey) { randomizeSettings(); event.preventDefault(); }
+              break;
             case "n": toggleNormalQuality(); event.preventDefault(); break;
             case "[": toggleEffectLayer("primary"); event.preventDefault(); break;
             case "]": toggleEffectLayer("secondary"); event.preventDefault(); break;
@@ -2113,6 +2295,10 @@
             case " ": togglePause(); event.preventDefault(); break;
             case "escape": cheatSheet.classList.add("hidden"); event.preventDefault(); break;
           }
+        });
+
+        document.addEventListener("keyup", event => {
+          clearActiveShortcut(event.key.toLowerCase());
         });
       }
 
