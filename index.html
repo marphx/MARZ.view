@@ -718,20 +718,56 @@
     }
 
     .dockHeader {
-      height: 58px;
+      min-height: 58px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      padding: 10px 12px;
+      padding: 8px 10px;
       border-bottom: 1px solid rgba(87, 255, 231, 0.16);
       background: rgba(1, 10, 10, 0.54);
+      position: relative;
+      flex-shrink: 0;
     }
 
     .dockHeader strong {
       letter-spacing: 0.12em;
       text-transform: uppercase;
       font-size: 0.86rem;
+      white-space: nowrap;
+    }
+
+    .dockHeaderActions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .moreMenu {
+      position: absolute;
+      right: 10px;
+      top: calc(100% + 6px);
+      z-index: 120;
+      width: min(340px, calc(100vw - 24px));
+      padding: 10px;
+      border: 1px solid rgba(87,255,231,0.22);
+      border-radius: 16px;
+      background: rgba(2, 12, 14, 0.96);
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+      backdrop-filter: blur(16px);
+    }
+
+    .moreMenu.hidden { display: none; }
+
+    .moreMenu .miniButton {
+      width: 100%;
+      padding: 8px 7px;
+      font-size: 0.68rem;
     }
 
     .dockBody {
@@ -1012,6 +1048,76 @@
       filter: hue-rotate(var(--uiHueRotate));
     }
 
+    #shortcutHUD {
+      position: fixed;
+      left: 50%;
+      bottom: calc(14px + var(--safe-bottom));
+      transform: translateX(-50%) translateY(12px);
+      z-index: 130;
+      width: min(560px, calc(100vw - 26px));
+      border: 1px solid rgba(87,255,231,0.30);
+      border-radius: 18px;
+      background: rgba(2, 12, 14, 0.86);
+      box-shadow: 0 0 24px rgba(87,255,231,0.18), inset 0 0 20px rgba(87,255,231,0.06);
+      backdrop-filter: blur(18px);
+      padding: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 90ms ease, transform 90ms ease;
+    }
+
+    #shortcutHUD.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    #shortcutHUD.hidden { display: none; }
+
+    .shortcutHUDTitle {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: #eafffb;
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 9px;
+    }
+
+    .shortcutHUDSub {
+      color: rgba(234,255,251,0.62);
+      font-size: 0.72rem;
+      text-transform: none;
+      letter-spacing: 0.04em;
+    }
+
+    .shortcutHUDBar {
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+
+    .shortcutHUDFill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, rgba(87,255,231,0.82), rgba(255,138,40,0.72));
+      box-shadow: 0 0 18px rgba(87,255,231,0.28);
+    }
+
+    .shortcutHUDButton {
+      display: inline-block;
+      border-radius: 999px;
+      border: 1px solid rgba(87,255,231,0.26);
+      padding: 8px 12px;
+      color: #eafffb;
+      background: rgba(87,255,231,0.10);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+    }
+
     #toast {
       position: fixed;
       left: 50%;
@@ -1126,6 +1232,14 @@
         padding-bottom: calc(70px + var(--safe-bottom));
       }
       .dockHeader { flex-shrink: 0; }
+      .dockHeaderActions { gap: 6px; }
+      .dockHeaderActions .miniButton { padding: 7px 8px; font-size: 0.66rem; }
+      .moreMenu {
+        left: 10px;
+        right: 10px;
+        width: auto;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
       .panelTabs { grid-template-columns: repeat(2, 1fr); flex-shrink: 0; }
       .toggleRow { grid-template-columns: 1fr; }
       .statusPill { display: none; }
@@ -1261,7 +1375,7 @@
               <li>Turn mapping on if needed and choose a shape or use <strong>Custom</strong>.</li>
               <li>Drag the frame, drag corner points, or add/remove custom points.</li>
               <li>Use <strong>Mask</strong> to hide everything outside the shape, or <strong>Warp</strong> to contort the visual inside the shape.</li>
-              <li>Use the content controls to zoom, pan, and squish the image inside the frame. Tap <strong>Refresh Map</strong> if you ever want to force the latest contour/stretch placement to snap into view.</li>
+              <li>Use the content controls to zoom, pan, and squish the image inside the frame. Turn on <strong>Touch Feed</strong> to pinch-zoom and finger-drag the content inside a mapped frame without moving the frame itself. Tap <strong>Refresh Map</strong> if you ever want to force the latest contour/stretch placement to snap into view.</li>
               <li>Use <strong>Trace Subject</strong>, <strong>Tight Trace</strong>, or <strong>Box Trace</strong> to detect a dominant subject and create a more precise frame automatically.</li>
             </ol>
           </div>
@@ -1294,7 +1408,7 @@
               <div class="guideChip"><strong>K</strong>Show / hide the keyboard guide.</div>
               <div class="guideChip"><strong>A</strong>Open map mode. <strong>Shift + A</strong> traces the dominant subject.</div>
               <div class="guideChip"><strong>D + Arrows</strong>Move the selected mapping point. Hold to accelerate.</div><div class="guideChip"><strong>M + Arrows</strong>Move the whole mapped frame with precision acceleration.</div><div class="guideChip"><strong>O / Delete</strong>Add or remove custom mapping points from the keyboard.</div>
-              <div class="guideChip"><strong>V + Arrows</strong>Pan the content inside the mapped frame.</div>
+              <div class="guideChip"><strong>C + Arrows</strong>Pan the content inside the mapped frame. V remains available as a backup.</div>
               <div class="guideChip"><strong>X + Arrows</strong>Squish / stretch the content.</div>
               <div class="guideChip"><strong>Z + +/-</strong>Zoom the content inside the frame.</div>
               <div class="guideChip"><strong>Tab / Shift+Tab</strong>Cycle through mapped frames.</div>
@@ -1327,11 +1441,14 @@
     <div id="controlDock" class="collapsed hidden" aria-label="Control panels">
       <div class="dockHeader">
         <strong>Controls</strong>
-        <div>
-          <button id="keysButton" class="miniButton" title="Keyboard shortcuts">Keys</button>
+        <div class="dockHeaderActions">
           <button id="appHomeButton" class="miniButton" title="Return home">Home</button>
-          <button id="helpButton" class="miniButton" title="Help and how-to guide">Help</button>
           <button id="mapButton" class="miniButton mapButton" title="Projection mapping">Map</button>
+          <button id="moreControlsButton" class="miniButton" title="More controls">More</button>
+        </div>
+        <div id="moreControlsMenu" class="moreMenu hidden" aria-label="More control options">
+          <button id="keysButton" class="miniButton" title="Keyboard shortcuts">Keys</button>
+          <button id="helpButton" class="miniButton" title="Help and how-to guide">Help</button>
           <button id="fullButton" class="miniButton" title="True fullscreen">Full</button>
           <button id="resetNormalButton" class="miniButton" title="Return to smooth normal mode">Normal</button>
           <button id="hideUIButton" class="miniButton" title="Hide interface">Hide UI</button>
@@ -1414,6 +1531,19 @@
             <div><label for="zoom">Zoom warp</label><small>Subtle pulsing push toward the camera.</small></div><span class="valueReadout" id="zoomVal"></span>
             <input id="zoom" type="range" min="0" max="1" step="0.01" data-setting="zoom" />
           </div>
+          <div class="sectionTitle">Source framing <span>true camera/feed crop</span></div>
+          <div class="controlRow">
+            <div><label for="sourceZoom">Camera/feed zoom</label><small>True zoom into the live camera or active source before visual effects.</small></div><span class="valueReadout" id="sourceZoomVal"></span>
+            <input id="sourceZoom" type="range" min="1" max="4" step="0.01" data-setting="sourceZoom" />
+          </div>
+          <div class="controlRow">
+            <div><label for="sourcePanX">Camera/feed pan X</label><small>Move the zoomed source left/right.</small></div><span class="valueReadout" id="sourcePanXVal"></span>
+            <input id="sourcePanX" type="range" min="-1" max="1" step="0.01" data-setting="sourcePanX" />
+          </div>
+          <div class="controlRow">
+            <div><label for="sourcePanY">Camera/feed pan Y</label><small>Move the zoomed source up/down.</small></div><span class="valueReadout" id="sourcePanYVal"></span>
+            <input id="sourcePanY" type="range" min="-1" max="1" step="0.01" data-setting="sourcePanY" />
+          </div>
         </div>
 
         
@@ -1490,9 +1620,10 @@
           <div class="mapHint" id="mediaStatusText">Camera is active. Load photos, videos, or looping GIFs into the piano slots, then switch to a slot and map it. GIFs are held until loaded so the canvas does not accidentally render black placeholder frames.</div>
 
           <div class="sectionTitle" style="margin-top:14px;">Source fit <span>zoom, pan, squish</span></div>
-          <div class="buttonGrid three">
+          <div class="buttonGrid four">
             <button id="mapZoomOutButton" class="ghostButton">Z−</button>
             <button id="mapZoomInButton" class="ghostButton">Z+</button>
+            <button id="touchFeedButton" class="ghostButton">Touch Feed Off</button>
             <button id="mapContentResetButton" class="ghostButton">Reset Fit</button>
           </div>
           <div class="controlRow">
@@ -1609,13 +1740,13 @@
         <div class="keyCombo cat-map"><kbd>M</kbd> + <kbd>Arrows</kbd></div><div>Move the whole contoured frame as one piece. Hold longer to accelerate.</div>
         <div class="keyCombo cat-map"><kbd>O</kbd></div><div>Add a new editable point after the selected point.</div>
         <div class="keyCombo cat-map"><kbd>Delete</kbd>/<kbd>Backspace</kbd></div><div>Remove the selected added point. Corner points stay protected.</div>
-        <div class="keyCombo cat-map"><kbd>V</kbd> + <kbd>Arrows</kbd></div><div>Pan the active photo / video / camera feed inside the mapped frame.</div>
+        <div class="keyCombo cat-map"><kbd>C</kbd> + <kbd>Arrows</kbd></div><div>Pan the active photo / video / camera feed inside the mapped frame. Outside map mode, this pans the full camera/feed source. <kbd>V</kbd> still works as a backup.</div>
         <div class="keyCombo cat-map"><kbd>X</kbd> + <kbd>Arrows</kbd></div><div>Squish or stretch the active media inside the mapped frame.</div>
         <div class="keyCombo cat-map"><kbd>Z</kbd> + <kbd>+</kbd>/<kbd>-</kbd></div><div>Zoom the active media inside the mapped frame.</div>
         <div class="keyCombo cat-map"><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></div><div>Cycle through mapped frames while in map mode.</div>
         <div class="keyCombo cat-map"><kbd>\</kbd></div><div>Hide/show mapping outlines, dotted borders, and editable point dots without changing the mapped frames.</div>
         <div class="keyCombo cat-map"><kbd>T</kbd></div><div>Swap / rotate the assigned uploaded photos, GIFs, videos, or live feeds across active mapped frames while preserving frame sizes.</div>
-        <div class="keyCombo cat-map"><kbd>Pinch</kbd></div><div>Pinch on the mapping canvas to zoom the selected media or mapped frame.</div>
+        <div class="keyCombo cat-map"><kbd>Pinch / Touch Feed</kbd></div><div>Turn on Touch Feed, then pinch to zoom or drag inside the mapped frame to pan the content.</div>
         <div class="keyCombo cat-map"><kbd>F</kbd></div><div>Request true fullscreen and reduce the interface to the small hide/show dot.</div>
         <div class="keyCombo cat-map"><kbd>Piano Slots</kbd></div><div>On-screen media keys switch between custom photo/video/GIF slots for casting and editing.</div>
         <div class="keyCombo cat-map"><kbd>Clone 1–4</kbd></div><div>Use the on-screen clone buttons to add and edit multiple live camera frames at once.</div>
@@ -1638,6 +1769,11 @@
 
     <button id="mapGuideToggleButton" class="hidden" type="button" aria-label="Hide mapping outlines and points">Map guides</button>
     <button id="masterHideButton" class="hidden" type="button" aria-label="Show interface">UI</button>
+    <div id="shortcutHUD" class="hidden" aria-live="polite">
+      <div class="shortcutHUDTitle"><span id="shortcutHUDLabel">Shortcut</span><span id="shortcutHUDValue" class="shortcutHUDSub"></span></div>
+      <div id="shortcutHUDBar" class="shortcutHUDBar"><div id="shortcutHUDFill" class="shortcutHUDFill"></div></div>
+      <div id="shortcutHUDButton" class="shortcutHUDButton hidden"></div>
+    </div>
     <div id="toast" role="status" aria-live="polite"></div>
   </div>
 
@@ -1701,6 +1837,9 @@
         colorDrift: 0.45,
         feedback: 0.24,
         zoom: 0.2,
+        sourceZoom: 1,
+        sourcePanX: 0,
+        sourcePanY: 0,
         cameraAlpha: 0.06,
         mapEnabled: false,
         mapShape: "rectangle",
@@ -1747,6 +1886,7 @@
       let masterUIHidden = false;
       let mapEditorVisible = false;
       let mapGuidesVisible = true;
+      let touchFeedMode = false;
       let activeSourceMode = "camera";
       let activeMediaSlot = 0;
       let activeCloneSlot = 0;
@@ -1834,6 +1974,12 @@
       const cheatSheet = document.getElementById("cheatSheet");
       const masterHideButton = document.getElementById("masterHideButton");
       const mapGuideToggleButton = document.getElementById("mapGuideToggleButton");
+      const shortcutHUD = document.getElementById("shortcutHUD");
+      const shortcutHUDLabel = document.getElementById("shortcutHUDLabel");
+      const shortcutHUDValue = document.getElementById("shortcutHUDValue");
+      const shortcutHUDFill = document.getElementById("shortcutHUDFill");
+      const shortcutHUDBar = document.getElementById("shortcutHUDBar");
+      const shortcutHUDButton = document.getElementById("shortcutHUDButton");
       const toast = document.getElementById("toast");
       const statusPill = document.getElementById("statusPill");
       const topBar = document.getElementById("topBar");
@@ -2214,6 +2360,7 @@
         updateMapButtons();
         updateCloneButtons();
         updateFrameFxControls();
+        updateTouchFeedButton();
       }
 
       function updateEffectToggleButtons() {
@@ -3426,8 +3573,8 @@
       function formatValue(key, value) {
         if (key === "fps") return `${Math.round(value)}`;
         if (key === "exportBitrate") return `${value.toFixed(1)}M`;
-        if (key === "mapContentX" || key === "mapContentY") return `${value >= 0 ? "+" : ""}${value.toFixed(2)}`;
-        if (key === "mapContentZoom" || key === "mapContentScaleX" || key === "mapContentScaleY") return `${value.toFixed(2)}x`;
+        if (key === "mapContentX" || key === "mapContentY" || key === "sourcePanX" || key === "sourcePanY") return `${value >= 0 ? "+" : ""}${value.toFixed(2)}`;
+        if (key === "mapContentZoom" || key === "mapContentScaleX" || key === "mapContentScaleY" || key === "sourceZoom") return `${value.toFixed(2)}x`;
         return `${Math.round(value * 100)}%`;
       }
 
@@ -3588,6 +3735,12 @@
         document.getElementById("primaryToggleButton").addEventListener("click", () => toggleEffectLayer("primary"));
         document.getElementById("secondaryToggleButton").addEventListener("click", () => toggleEffectLayer("secondary"));
         document.getElementById("normalQualityButton").addEventListener("click", toggleNormalQuality);
+        document.getElementById("moreControlsButton").addEventListener("click", () => {
+          document.getElementById("moreControlsMenu").classList.toggle("hidden");
+        });
+        document.querySelectorAll("#moreControlsMenu .miniButton").forEach(button => {
+          button.addEventListener("click", () => document.getElementById("moreControlsMenu").classList.add("hidden"));
+        });
         document.getElementById("keysButton").addEventListener("click", () => cheatSheet.classList.toggle("hidden"));
         document.getElementById("appHomeButton").addEventListener("click", showHome);
         document.getElementById("helpButton").addEventListener("click", () => showGuide((mediaStream || demoMode) ? "resume" : "live"));
@@ -3635,6 +3788,7 @@
         document.getElementById("mapModeWarpButton").addEventListener("click", () => setMapMode("warp"));
         document.getElementById("mapZoomOutButton").addEventListener("click", () => adjustMapContentZoom(-0.08));
         document.getElementById("mapZoomInButton").addEventListener("click", () => adjustMapContentZoom(0.08));
+        document.getElementById("touchFeedButton").addEventListener("click", toggleTouchFeedMode);
         document.getElementById("mapContentResetButton").addEventListener("click", resetMapContentTransform);
         document.getElementById("mediaLoadButton").addEventListener("click", () => document.getElementById("mediaUpload").click());
         document.getElementById("mediaCameraButton").addEventListener("click", () => useCameraSource());
@@ -3711,6 +3865,7 @@
         cheatSheet.classList.add("hidden");
         masterHideButton.classList.remove("hidden");
         updateMasterHideButton();
+        if (masterUIHidden) hideShortcutHUD();
       }
 
       function toggleMasterUI() {
@@ -3927,6 +4082,13 @@
             sHeight = vw / canvasRatio;
             sy = (vh - sHeight) / 2;
           }
+          const z = clamp(Number(settings.sourceZoom || 1), 1, 4);
+          const cropW = sWidth / z;
+          const cropH = sHeight / z;
+          sx += (sWidth - cropW) / 2 + clamp(Number(settings.sourcePanX || 0), -1, 1) * (sWidth - cropW) / 2;
+          sy += (sHeight - cropH) / 2 + clamp(Number(settings.sourcePanY || 0), -1, 1) * (sHeight - cropH) / 2;
+          sWidth = cropW;
+          sHeight = cropH;
           sourceCtx.drawImage(activeSource, sx, sy, sWidth, sHeight, 0, 0, sw, sh);
         } else {
           drawDemoSource(sourceCtx, sw, sh, now);
@@ -4377,19 +4539,33 @@
 
       function adjustMapContentZoom(delta) {
         pushMapHistory();
-        applySetting("mapContentZoom", clamp(Number(settings.mapContentZoom || 1) + delta, 0.25, 4), false);
+        const next = clamp(Number(settings.mapContentZoom || 1) + delta, 0.25, 4);
+        applySetting("mapContentZoom", next, false);
+        syncActiveProjectionState();
+        renderMapOverlay();
+        showShortcutHUD("Frame Zoom", `${next.toFixed(2)}x`, (next - 0.25) / 3.75, false);
       }
 
       function panMapContent(dx, dy) {
         pushMapHistory();
-        applySetting("mapContentX", clamp(Number(settings.mapContentX || 0) + dx, -1, 1), false);
-        applySetting("mapContentY", clamp(Number(settings.mapContentY || 0) + dy, -1, 1), false);
+        const nextX = clamp(Number(settings.mapContentX || 0) + dx, -1, 1);
+        const nextY = clamp(Number(settings.mapContentY || 0) + dy, -1, 1);
+        applySetting("mapContentX", nextX, false);
+        applySetting("mapContentY", nextY, false);
+        syncActiveProjectionState();
+        renderMapOverlay();
+        showShortcutHUD("Frame Pan", `X ${nextX.toFixed(2)} / Y ${nextY.toFixed(2)}`, (nextX + 1) / 2, false);
       }
 
       function squishMapContent(dx, dy) {
         pushMapHistory();
-        applySetting("mapContentScaleX", clamp(Number(settings.mapContentScaleX || 1) + dx, 0.25, 3), false);
-        applySetting("mapContentScaleY", clamp(Number(settings.mapContentScaleY || 1) + dy, 0.25, 3), false);
+        const nextX = clamp(Number(settings.mapContentScaleX || 1) + dx, 0.25, 3);
+        const nextY = clamp(Number(settings.mapContentScaleY || 1) + dy, 0.25, 3);
+        applySetting("mapContentScaleX", nextX, false);
+        applySetting("mapContentScaleY", nextY, false);
+        syncActiveProjectionState();
+        renderMapOverlay();
+        showShortcutHUD("Frame Squish", `W ${nextX.toFixed(2)}x / H ${nextY.toFixed(2)}x`, (nextX - 0.25) / 2.75, false);
       }
 
       function resetMapContentTransform() {
@@ -4590,7 +4766,11 @@
           }
           if (mapPointerCache.size === 2) {
             const pts = Array.from(mapPointerCache.values());
-            mapPinch = { distance: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1, zoom: Number(settings.mapContentZoom || 1) };
+            mapPinch = {
+              distance: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1,
+              zoom: Number(settings.mapContentZoom || 1),
+              content: touchFeedMode || isPointInsideMap(point)
+            };
             mapDrag = null;
             return;
           }
@@ -4609,7 +4789,7 @@
             return;
           }
           if (isPointInsideMap(point)) {
-            mapDrag.mode = 'move';
+            mapDrag.mode = touchFeedMode ? 'contentPan' : 'move';
             mapCanvas.setPointerCapture(event.pointerId);
             return;
           }
@@ -4631,6 +4811,7 @@
             updateControlsFromSettings();
             syncActiveProjectionState();
             renderMapOverlay();
+            showShortcutHUD("Pinch Frame Zoom", `${Number(settings.mapContentZoom).toFixed(2)}x`, (Number(settings.mapContentZoom) - 0.25) / 3.75, false);
             return;
           }
           if (!mapDrag || mapDrag.pointerId !== event.pointerId) return;
@@ -4648,6 +4829,17 @@
             syncActiveProjectionState();
             mapDrag.start = point;
             renderMapOverlay();
+          } else if (mapDrag.mode === 'contentPan') {
+            if (!mapDrag.historyPushed) { pushMapHistory(); mapDrag.historyPushed = true; }
+            const panDx = dx / Math.max(1, canvas.width) * 2.2;
+            const panDy = dy / Math.max(1, canvas.height) * 2.2;
+            settings.mapContentX = clamp(Number(settings.mapContentX || 0) + panDx, -1, 1);
+            settings.mapContentY = clamp(Number(settings.mapContentY || 0) + panDy, -1, 1);
+            updateControlsFromSettings();
+            syncActiveProjectionState();
+            mapDrag.start = point;
+            renderMapOverlay();
+            showShortcutHUD("Touch Feed Pan", `X ${Number(settings.mapContentX).toFixed(2)} / Y ${Number(settings.mapContentY).toFixed(2)}`, (Number(settings.mapContentX) + 1) / 2, false);
           }
         });
 
@@ -5146,6 +5338,50 @@
         showToast(`${secondary ? "Secondary" : "Primary"}: ${effect.name}`);
       }
 
+      function hideShortcutHUD() {
+        shortcutHUD.classList.remove("visible");
+        shortcutHUD.classList.add("hidden");
+      }
+
+      function showShortcutHUD(label, value = "", percent = null, buttonMode = false) {
+        if (masterUIHidden) return;
+        shortcutHUD.classList.remove("hidden");
+        shortcutHUD.classList.add("visible");
+        shortcutHUDLabel.textContent = label;
+        shortcutHUDValue.textContent = value;
+        shortcutHUDBar.classList.toggle("hidden", buttonMode);
+        shortcutHUDButton.classList.toggle("hidden", !buttonMode);
+        if (buttonMode) shortcutHUDButton.textContent = value || label;
+        if (percent !== null) shortcutHUDFill.style.width = `${clamp(percent, 0, 1) * 100}%`;
+      }
+
+      function showRangeShortcutHUD(range) {
+        if (!range) return;
+        const key = range.dataset.setting;
+        const value = Number(range.value);
+        const min = Number(range.min || 0);
+        const max = Number(range.max || 1);
+        const pct = (value - min) / Math.max(0.0001, max - min);
+        showShortcutHUD(sliderShortcutNames[key] || key, formatValue(key, value), pct, false);
+      }
+
+      function showMapShortcutHUD(label, value = "") {
+        showShortcutHUD(label, value, null, true);
+      }
+
+      function updateTouchFeedButton() {
+        const button = document.getElementById("touchFeedButton");
+        if (!button) return;
+        button.textContent = touchFeedMode ? "Touch Feed On" : "Touch Feed Off";
+        button.classList.toggle("active", touchFeedMode);
+      }
+
+      function toggleTouchFeedMode() {
+        touchFeedMode = !touchFeedMode;
+        updateTouchFeedButton();
+        showToast(touchFeedMode ? "Touch Feed on: drag inside a frame to pan content; pinch to zoom content." : "Touch Feed off: drag frames and points normally.");
+      }
+
       function adjustLastRange(delta) {
         const range = lastRange || document.querySelector(".panelPage.active input[type='range']");
         if (!range) return;
@@ -5156,6 +5392,7 @@
         range.value = String(next);
         range.focus({ preventScroll: true });
         applySetting(range.dataset.setting, next);
+        showRangeShortcutHUD(range);
       }
 
       function focusSliderBySetting(setting, announce = true) {
@@ -5163,6 +5400,7 @@
         if (!range) return null;
         lastRange = range;
         range.focus({ preventScroll: true });
+        showRangeShortcutHUD(range);
         if (announce) showToast(`${sliderShortcutNames[setting] || setting}: use ← / → to adjust.`);
         return range;
       }
@@ -5180,6 +5418,7 @@
         if (key === activeShortcutKey) {
           activeShortcutKey = null;
           activeShortcutSetting = null;
+          hideShortcutHUD();
         }
       }
 
@@ -5230,12 +5469,14 @@
 
           if (keyboardMapMode && key === 'd' && !event.ctrlKey && !event.metaKey && !event.altKey) {
             keyboardMapCropHeld = true;
+            showMapShortcutHUD("Move Point", "Hold + arrows");
             event.preventDefault();
             return;
           }
 
           if (keyboardMapMode && key === 'm' && !event.ctrlKey && !event.metaKey && !event.altKey) {
             keyboardMapMoveHeld = true;
+            showMapShortcutHUD("Move Whole Frame", "Hold + arrows");
             event.preventDefault();
             return;
           }
@@ -5252,27 +5493,35 @@
             return;
           }
 
-          if (keyboardMapMode && key === 'v' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          if ((key === 'c' || (keyboardMapMode && key === 'v')) && !event.ctrlKey && !event.metaKey && !event.altKey) {
             keyboardMapPanHeld = true;
+            showMapShortcutHUD(keyboardMapMode ? "Frame Pan" : "Camera/Feed Pan", "Hold + arrows");
             event.preventDefault();
             return;
           }
 
           if (keyboardMapMode && key === 'x' && !event.ctrlKey && !event.metaKey && !event.altKey) {
             keyboardMapSquishHeld = true;
+            showMapShortcutHUD("Frame Squish", "Hold + arrows");
             event.preventDefault();
             return;
           }
 
-          if (keyboardMapMode && key === 'z' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          if (key === 'z' && !event.ctrlKey && !event.metaKey && !event.altKey) {
             keyboardZoomHeld = true;
+            showMapShortcutHUD(keyboardMapMode ? "Frame Zoom" : "Camera/Feed Zoom", "Press + or -");
             event.preventDefault();
             return;
           }
 
-          if (keyboardMapMode && keyboardZoomHeld && (rawKey === '+' || rawKey === '=' || rawKey === '-' || rawKey === '_')) {
+          if (keyboardZoomHeld && (rawKey === '+' || rawKey === '=' || rawKey === '-' || rawKey === '_')) {
             event.preventDefault();
-            adjustMapContentZoom((rawKey === '-' || rawKey === '_') ? -0.08 : 0.08);
+            if (keyboardMapMode) adjustMapContentZoom((rawKey === '-' || rawKey === '_') ? -0.08 : 0.08);
+            else {
+              const next = clamp(Number(settings.sourceZoom || 1) + ((rawKey === '-' || rawKey === '_') ? -0.08 : 0.08), 1, 4);
+              applySetting("sourceZoom", next, false);
+              showShortcutHUD("Camera/Feed Zoom", `${next.toFixed(2)}x`, (next - 1) / 3, false);
+            }
             return;
           }
 
@@ -5307,6 +5556,8 @@
           if (number !== null) {
             event.preventDefault();
             selectEffectByNumber(number, event.shiftKey || event.altKey);
+            showMapShortcutHUD((event.shiftKey || event.altKey) ? "Secondary Effect" : "Primary Effect", `Slot ${number || 10}`);
+            setTimeout(() => { if (!masterUIHidden) hideShortcutHUD(); }, 420);
             return;
           }
 
@@ -5356,6 +5607,22 @@
             return;
           }
 
+          if (!keyboardMapMode && keyboardMapPanHeld && ["arrowup", "arrowright", "arrowdown", "arrowleft"].includes(key)) {
+            event.preventDefault();
+            const unit = 0.012 * (event.shiftKey ? 3 : 1);
+            let dx = 0, dy = 0;
+            if (key === 'arrowleft') dx = -unit;
+            if (key === 'arrowright') dx = unit;
+            if (key === 'arrowup') dy = -unit;
+            if (key === 'arrowdown') dy = unit;
+            const nextX = clamp(Number(settings.sourcePanX || 0) + dx, -1, 1);
+            const nextY = clamp(Number(settings.sourcePanY || 0) + dy, -1, 1);
+            applySetting("sourcePanX", nextX, false);
+            applySetting("sourcePanY", nextY, false);
+            showShortcutHUD("Camera/Feed Pan", `X ${nextX.toFixed(2)} / Y ${nextY.toFixed(2)}`, (nextX + 1) / 2, false);
+            return;
+          }
+
           if (!event.ctrlKey && !event.metaKey && !event.altKey && sliderShortcutMap[key]) {
             event.preventDefault();
             setActiveShortcut(key);
@@ -5401,9 +5668,10 @@
           clearActiveShortcut(key);
           if (key === 'd') keyboardMapCropHeld = false;
           if (key === 'm') keyboardMapMoveHeld = false;
-          if (key === 'v') keyboardMapPanHeld = false;
+          if (key === 'v' || key === 'c') keyboardMapPanHeld = false;
           if (key === 'x') keyboardMapSquishHeld = false;
           if (key === 'z') keyboardZoomHeld = false;
+          if (['d','m','v','c','x','z'].includes(key)) hideShortcutHUD();
           if (key.startsWith('arrow')) keyboardArrowHold = { key: "", start: 0, last: 0 };
         });
       }
