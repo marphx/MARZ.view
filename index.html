@@ -25,6 +25,7 @@
       --danger: #ff5478;
       --radius: 18px;
       --shadow: 0 0 22px rgba(87, 255, 231, 0.23), 0 0 80px rgba(52, 255, 145, 0.10);
+      --uiHueRotate: 0deg;
       --safe-bottom: env(safe-area-inset-bottom, 0px);
       --safe-top: env(safe-area-inset-top, 0px);
     }
@@ -984,6 +985,19 @@
       50% { opacity: 0.15; }
     }
 
+    #homeScreen,
+    #guideScreen,
+    #loaderScreen,
+    #controlDock,
+    #topBar,
+    #cornerHint,
+    #cheatSheet,
+    #toast,
+    #masterHideButton,
+    #mapGuideToggleButton {
+      filter: hue-rotate(var(--uiHueRotate));
+    }
+
     #toast {
       position: fixed;
       left: 50%;
@@ -1141,6 +1155,8 @@
             <button id="startButton" class="primaryButton">Start Camera + Mic</button>
             <button id="demoButton" class="ghostButton">Open Demo Visualizer</button>
             <button id="loaderPreviewButton" class="ghostButton">Replay Loader</button>
+            <button id="uiColorButton" class="ghostButton" type="button">UI Color</button>
+            <input id="uiColorInput" type="color" value="#57ffe7" hidden />
             <button id="homeHelpButton" class="ghostButton">How To</button>
             <button id="homeBugButton" class="tinyBugButton" type="button">Report a Bug</button>
           </div>
@@ -1170,9 +1186,9 @@
           <div class="guideSection">
             <h3>2) Main screens and buttons</h3>
             <div class="guideGrid">
-              <div class="guideChip"><strong>Home</strong>Animated intro page. Use Start to open this guide, Replay Loader to preview the loading screen, and Report a Bug to email a bug report.</div>
+              <div class="guideChip"><strong>Home</strong>Animated intro page. Use UI Color to recolor the app, Start to open this guide, Replay Loader to preview the loading screen, and Report a Bug to email a bug report.</div>
               <div class="guideChip"><strong>Help</strong>Opens this guide again from inside the app so users can review the workflow without leaving the project.</div>
-              <div class="guideChip"><strong>Full</strong>Requests fullscreen and reduces the interface for projection use.</div>
+              <div class="guideChip"><strong>Full</strong>Requests fullscreen and reduces the interface for projection use.</div><div class="guideChip"><strong>Camera devices</strong>Use Find Cameras, Use Camera, and Assign to Frame to choose front, wide, zoom, or other available device cameras.</div>
               <div class="guideChip"><strong>Normal</strong>Resets the active view back to a smooth normal camera feed with effects off and a clean default state.</div>
             </div>
           </div>
@@ -1204,7 +1220,7 @@
             <ul>
               <li>Upload photos, videos, and GIFs into the piano-style media slots.</li>
               <li>GIFs loop automatically and are held until loaded so black placeholder frames are less likely to appear.</li>
-              <li><strong>Add Source Frame</strong> duplicates the currently active live source or media source into another mapped frame.</li>
+              <li><strong>Add Source Frame</strong> duplicates the currently active live source or media source into another mapped frame.</li><li><strong>Assign to Frame</strong> in the Camera panel lets a selected mapped frame use a specific device camera, such as front, wide, or zoom, when the browser exposes those cameras.</li>
               <li><strong>Frame 1–4</strong> buttons select which mapped frame you are editing.</li><li><strong>Frame visuals</strong> lets each mapped frame use its own primary and secondary visual modes. Use this selectively for performance when running several frames at once.</li>
               <li><strong>Swap Frames</strong> rotates the assigned sources between active mapped frames while preserving each frame’s dimensions and shape.</li>
             </ul>
@@ -1478,6 +1494,15 @@
             <button id="pauseButton" class="ghostButton">Pause</button>
             <button id="homeButton" class="ghostButton">Home</button>
           </div>
+          <div class="sectionTitle" style="margin-top:14px;">Device cameras <span>front / wide / zoom when available</span></div>
+          <label for="cameraDeviceSelect" class="selectLabel">Active Camera</label>
+          <select id="cameraDeviceSelect"></select>
+          <div class="buttonGrid three">
+            <button id="refreshCamerasButton" class="ghostButton">Find Cameras</button>
+            <button id="switchCameraButton" class="ghostButton">Use Camera</button>
+            <button id="assignCameraFrameButton" class="ghostButton">Assign to Frame</button>
+          </div>
+          <p class="tinyNote" id="cameraDeviceStatus">Camera names appear after permission is granted. Multi-camera streaming depends on what the browser/device allows.</p>
           <div class="controlRow">
             <div><label for="cameraAlpha">Camera ghost</label><small>Faint original video under the visuals.</small></div><span class="valueReadout" id="cameraAlphaVal"></span>
             <input id="cameraAlpha" type="range" min="0" max="0.6" step="0.01" data-setting="cameraAlpha" />
@@ -1507,7 +1532,7 @@
 
         <div class="keyGroup cat-effects">Effects + layers</div>
         <div class="keyCombo cat-effects"><kbd>1</kbd>–<kbd>0</kbd></div><div>Change the primary effect. <kbd>1</kbd> selects Normal Camera.</div>
-        <div class="keyCombo cat-effects"><kbd>Shift</kbd> + <kbd>1</kbd>–<kbd>0</kbd></div><div>Change the secondary effect. <kbd>Shift</kbd> + <kbd>1</kbd> selects Normal Camera.</div>
+        <div class="keyCombo cat-effects"><kbd>Shift</kbd>/<kbd>Alt</kbd> + <kbd>1</kbd>–<kbd>0</kbd></div><div>Change the secondary effect independently. Uses physical Digit keys, so it works even when Shift turns numbers into symbols.</div>
         <div class="keyCombo cat-effects"><kbd>[</kbd></div><div>Toggle the primary effect on / off.</div>
         <div class="keyCombo cat-effects"><kbd>]</kbd></div><div>Toggle the secondary effect on / off.</div>
         <div class="keyCombo cat-effects"><kbd>N</kbd></div><div>Toggle sharper normal-camera quality.</div>
@@ -1673,6 +1698,9 @@
       let activeSourceMode = "camera";
       let activeMediaSlot = 0;
       let activeCloneSlot = 0;
+      let cameraDevices = [];
+      let activeCameraDeviceId = "";
+      let cameraDeviceSources = new Map();
       let cameraProjectionState = null;
       let cameraCloneSlots = Array.from({ length: 4 }, () => null);
       let mediaSlots = Array.from({ length: 8 }, () => null);
@@ -2211,6 +2239,150 @@
         renderMapOverlay();
       }
 
+      function getCameraStatusElement() {
+        return document.getElementById("cameraDeviceStatus");
+      }
+
+      function setCameraStatus(message) {
+        const el = getCameraStatusElement();
+        if (el) el.textContent = message;
+      }
+
+      function labelForCameraDevice(deviceId) {
+        const index = cameraDevices.findIndex(device => device.deviceId === deviceId);
+        const device = cameraDevices[index];
+        if (!device) return deviceId ? "Selected camera" : "Default camera";
+        return device.label || `Camera ${index + 1}`;
+      }
+
+      function updateCameraDeviceSelect() {
+        const select = document.getElementById("cameraDeviceSelect");
+        if (!select) return;
+        const current = activeCameraDeviceId || select.value || "";
+        select.innerHTML = "";
+        select.add(new Option("Default / browser choice", ""));
+        cameraDevices.forEach((device, index) => {
+          select.add(new Option(device.label || `Camera ${index + 1}`, device.deviceId));
+        });
+        select.value = cameraDevices.some(device => device.deviceId === current) ? current : "";
+      }
+
+      async function refreshCameraDevices(showMessage = false) {
+        if (!navigator.mediaDevices?.enumerateDevices) {
+          setCameraStatus("This browser does not expose camera-device selection.");
+          return [];
+        }
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          cameraDevices = devices.filter(device => device.kind === "videoinput");
+          updateCameraDeviceSelect();
+          const names = cameraDevices.map((device, index) => device.label || `Camera ${index + 1}`).join(", ");
+          setCameraStatus(cameraDevices.length
+            ? `Detected ${cameraDevices.length} camera${cameraDevices.length === 1 ? "" : "s"}: ${names}.`
+            : "No camera devices listed yet. Start camera permission first, then tap Find Cameras.");
+          if (showMessage) showToast(`Found ${cameraDevices.length} camera${cameraDevices.length === 1 ? "" : "s"}.`);
+          return cameraDevices;
+        } catch (error) {
+          console.warn(error);
+          setCameraStatus("Camera list could not be refreshed.");
+          return [];
+        }
+      }
+
+      async function startCameraDeviceElement(deviceId) {
+        if (!deviceId) return video;
+        if (deviceId === activeCameraDeviceId && video.readyState >= 2) return video;
+        const existing = cameraDeviceSources.get(deviceId);
+        if (existing?.video?.readyState >= 2) return existing.video;
+        if (existing?.promise) return existing.promise;
+
+        const promise = navigator.mediaDevices.getUserMedia({
+          video: {
+            deviceId: { exact: deviceId },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            frameRate: { ideal: 30, max: 60 }
+          },
+          audio: false
+        }).then(async stream => {
+          const v = document.createElement("video");
+          v.playsInline = true;
+          v.muted = true;
+          v.autoplay = true;
+          v.srcObject = stream;
+          await v.play().catch(() => {});
+          cameraDeviceSources.set(deviceId, { stream, video: v });
+          return v;
+        }).catch(error => {
+          console.warn(error);
+          cameraDeviceSources.delete(deviceId);
+          setCameraStatus(`Could not start ${labelForCameraDevice(deviceId)} as an extra live source. Browser/device may allow only one camera at a time.`);
+          return null;
+        });
+
+        cameraDeviceSources.set(deviceId, { promise });
+        return promise;
+      }
+
+      function stopCameraDeviceSources() {
+        cameraDeviceSources.forEach(entry => {
+          if (entry?.stream) entry.stream.getTracks().forEach(track => track.stop());
+          if (entry?.video) entry.video.srcObject = null;
+        });
+        cameraDeviceSources.clear();
+      }
+
+      async function switchMainCameraToSelected() {
+        const select = document.getElementById("cameraDeviceSelect");
+        const deviceId = select ? select.value : "";
+        await startRealMedia(true, deviceId);
+        showToast(`Using ${labelForCameraDevice(deviceId)}.`);
+      }
+
+      async function assignSelectedCameraToActiveFrame() {
+        const select = document.getElementById("cameraDeviceSelect");
+        const deviceId = select ? select.value : activeCameraDeviceId;
+        if (activeSourceMode !== "clone" || !cameraCloneSlots[activeCloneSlot]) {
+          showToast("Select or add a mapped frame first.");
+          return;
+        }
+        pushMapHistory();
+        await startCameraDeviceElement(deviceId);
+        const slot = cameraCloneSlots[activeCloneSlot];
+        slot.sourceType = deviceId ? "cameraDevice" : "camera";
+        slot.sourceId = deviceId || "";
+        slot.sourceLabel = labelForCameraDevice(deviceId);
+        updateCloneButtons();
+        syncActiveProjectionState();
+        refreshMapView();
+        showToast(`Assigned ${slot.sourceLabel} to frame ${activeCloneSlot + 1}.`);
+      }
+
+      function hexToHue(hex) {
+        const cleaned = String(hex || "#57ffe7").replace("#", "");
+        const r = parseInt(cleaned.slice(0, 2), 16) / 255;
+        const g = parseInt(cleaned.slice(2, 4), 16) / 255;
+        const b = parseInt(cleaned.slice(4, 6), 16) / 255;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const d = max - min;
+        if (d === 0) return 0;
+        let h = 0;
+        if (max === r) h = ((g - b) / d) % 6;
+        else if (max === g) h = (b - r) / d + 2;
+        else h = (r - g) / d + 4;
+        return (h * 60 + 360) % 360;
+      }
+
+      function applyUIColor(hex) {
+        const selectedHue = hexToHue(hex);
+        const baseTealHue = 171;
+        const rotate = Math.round(selectedHue - baseTealHue);
+        document.documentElement.style.setProperty("--uiHueRotate", `${rotate}deg`);
+        try { localStorage.setItem("marzview_ui_color", hex); } catch (e) {}
+        showToast("UI color updated.");
+      }
+
       function updateMediaStatusText(message = "") {
         const el = document.getElementById("mediaStatusText");
         if (!el) return;
@@ -2357,14 +2529,20 @@
           const slot = cameraCloneSlots[index];
           button.classList.toggle("active", activeSourceMode === "clone" && activeCloneSlot === index);
           button.textContent = `Frame ${index + 1}`;
-          const sourceLabel = !slot ? 'empty' : (slot.sourceType === 'slot' ? `media ${slot.sourceIndex + 1}` : 'camera');
+          const sourceLabel = !slot ? 'empty' : (
+            slot.sourceType === 'slot' ? `media ${slot.sourceIndex + 1}` :
+            slot.sourceType === 'cameraDevice' ? (slot.sourceLabel || labelForCameraDevice(slot.sourceId)) :
+            'camera'
+          );
           button.title = slot ? `Mapped frame ${index + 1} using ${sourceLabel}` : `Empty frame slot ${index + 1}`;
           button.style.opacity = slot ? '1' : '0.66';
         });
         if (!cloneStatus) return;
         if (activeSourceMode === 'clone' && cameraCloneSlots[activeCloneSlot]) {
           const slot = cameraCloneSlots[activeCloneSlot];
-          const sourceLabel = slot.sourceType === 'slot' ? `media slot ${slot.sourceIndex + 1}` : 'live camera';
+          const sourceLabel = slot.sourceType === 'slot' ? `media slot ${slot.sourceIndex + 1}` :
+            slot.sourceType === 'cameraDevice' ? (slot.sourceLabel || labelForCameraDevice(slot.sourceId)) :
+            'live camera';
           cloneStatus.textContent = `Editing mapped frame ${activeCloneSlot + 1} (${sourceLabel}). Use pinch or Z + +/- to zoom, V + arrows to pan, X + arrows to squish.`;
         } else {
           const active = cameraCloneSlots.filter(Boolean);
@@ -2397,14 +2575,18 @@
       }
 
       function getCurrentEditableSourceDescriptor() {
-        if (activeSourceMode === 'slot') return { sourceType: 'slot', sourceIndex: activeMediaSlot };
+        if (activeSourceMode === 'slot') return { sourceType: 'slot', sourceIndex: activeMediaSlot, sourceId: "", sourceLabel: "" };
         if (activeSourceMode === 'clone' && cameraCloneSlots[activeCloneSlot]) {
           return {
             sourceType: cameraCloneSlots[activeCloneSlot].sourceType || 'camera',
-            sourceIndex: cameraCloneSlots[activeCloneSlot].sourceIndex ?? null
+            sourceIndex: cameraCloneSlots[activeCloneSlot].sourceIndex ?? null,
+            sourceId: cameraCloneSlots[activeCloneSlot].sourceId || "",
+            sourceLabel: cameraCloneSlots[activeCloneSlot].sourceLabel || ""
           };
         }
-        return { sourceType: 'camera', sourceIndex: null };
+        return activeCameraDeviceId
+          ? { sourceType: 'cameraDevice', sourceIndex: null, sourceId: activeCameraDeviceId, sourceLabel: labelForCameraDevice(activeCameraDeviceId) }
+          : { sourceType: 'camera', sourceIndex: null, sourceId: "", sourceLabel: "Default camera" };
       }
 
       function addCameraClone() {
@@ -2417,6 +2599,8 @@
           name: `Mapped Frame ${index + 1}`,
           sourceType: descriptor.sourceType,
           sourceIndex: descriptor.sourceIndex,
+          sourceId: descriptor.sourceId || "",
+          sourceLabel: descriptor.sourceLabel || "",
           projectionState: getDefaultCloneProjection(index)
         };
         activateCameraClone(index);
@@ -2429,6 +2613,8 @@
             name: `Mapped Frame ${index + 1}`,
             sourceType: descriptor.sourceType,
             sourceIndex: descriptor.sourceIndex,
+            sourceId: descriptor.sourceId || "",
+            sourceLabel: descriptor.sourceLabel || "",
             projectionState: getDefaultCloneProjection(index)
           };
         }
@@ -2454,12 +2640,16 @@
         }
         const descriptors = activeFrames.map(entry => ({
           sourceType: entry.slot.sourceType || 'camera',
-          sourceIndex: entry.slot.sourceIndex ?? null
+          sourceIndex: entry.slot.sourceIndex ?? null,
+          sourceId: entry.slot.sourceId || "",
+          sourceLabel: entry.slot.sourceLabel || ""
         }));
         descriptors.unshift(descriptors.pop());
         activeFrames.forEach((entry, i) => {
           entry.slot.sourceType = descriptors[i].sourceType;
           entry.slot.sourceIndex = descriptors[i].sourceIndex;
+          entry.slot.sourceId = descriptors[i].sourceId || "";
+          entry.slot.sourceLabel = descriptors[i].sourceLabel || "";
         });
         if (activeSourceMode === 'clone' && cameraCloneSlots[activeCloneSlot]) {
           applyProjectionStatePayload(cameraCloneSlots[activeCloneSlot].projectionState || getDefaultCloneProjection(activeCloneSlot));
@@ -2529,6 +2719,13 @@
       function getCloneSourceElement(cloneSlot) {
         if (!cloneSlot) return null;
         if (cloneSlot.sourceType === 'slot') return getSlotMediaElement(cloneSlot.sourceIndex);
+        if (cloneSlot.sourceType === 'cameraDevice') {
+          if (cloneSlot.sourceId === activeCameraDeviceId && video.readyState >= 2) return video;
+          const entry = cameraDeviceSources.get(cloneSlot.sourceId);
+          if (entry?.video?.readyState >= 2) return entry.video;
+          startCameraDeviceElement(cloneSlot.sourceId);
+          return video.readyState >= 2 ? video : null;
+        }
         if (!demoMode && video.readyState >= 2) return video;
         return null;
       }
@@ -3338,6 +3535,13 @@
         masterHideButton.addEventListener("click", toggleMasterUI);
         mapGuideToggleButton.addEventListener("click", toggleMapGuides);
         document.getElementById("homeHelpButton").addEventListener("click", () => showGuide("live"));
+        document.getElementById("uiColorButton").addEventListener("click", () => document.getElementById("uiColorInput").click());
+        document.getElementById("uiColorInput").addEventListener("input", event => applyUIColor(event.target.value));
+        const savedUIColor = (() => { try { return localStorage.getItem("marzview_ui_color"); } catch (e) { return null; } })();
+        if (savedUIColor) {
+          document.getElementById("uiColorInput").value = savedUIColor;
+          applyUIColor(savedUIColor);
+        }
         document.getElementById("guideHomeButton").addEventListener("click", showHome);
         document.getElementById("guideLaunchButton").addEventListener("click", launchFromGuide);
         document.getElementById("homeBugButton").addEventListener("click", reportBug);
@@ -3383,6 +3587,13 @@
           showToast("Settings reset.");
         });
         document.getElementById("restartMediaButton").addEventListener("click", () => startRealMedia(true));
+        document.getElementById("refreshCamerasButton").addEventListener("click", () => refreshCameraDevices(true));
+        document.getElementById("switchCameraButton").addEventListener("click", switchMainCameraToSelected);
+        document.getElementById("assignCameraFrameButton").addEventListener("click", assignSelectedCameraToActiveFrame);
+        document.getElementById("cameraDeviceSelect").addEventListener("change", event => {
+          activeCameraDeviceId = event.target.value;
+          setCameraStatus(`Selected ${labelForCameraDevice(activeCameraDeviceId)}. Tap Use Camera or Assign to Frame.`);
+        });
         document.getElementById("pauseButton").addEventListener("click", togglePause);
         document.getElementById("homeButton").addEventListener("click", showHome);
         document.getElementById("startButton").addEventListener("click", () => showGuide("live"));
@@ -3501,15 +3712,18 @@
         });
       }
 
-      async function startRealMedia(restart = false) {
+      async function startRealMedia(restart = false, preferredDeviceId = null) {
         demoMode = false;
         if (restart) stopMedia();
         try {
           setStatus("Requesting camera and microphone…");
+          activeCameraDeviceId = preferredDeviceId !== null ? preferredDeviceId : activeCameraDeviceId;
+          const videoConstraints = activeCameraDeviceId
+            ? { deviceId: { exact: activeCameraDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 60 } }
+            : { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 60 } };
           mediaStream = await navigator.mediaDevices.getUserMedia({
             video: {
-              facingMode: { ideal: "environment" },
-              width: { ideal: 1280 },
+              ...videoConstraints,
               height: { ideal: 720 },
               frameRate: { ideal: 30, max: 60 }
             },
@@ -3522,6 +3736,8 @@
           video.srcObject = mediaStream;
           await video.play();
           await setupAudio(mediaStream);
+          await refreshCameraDevices(false);
+          updateCameraDeviceSelect();
           showVisualizer();
           startEngine();
           setStatus("Live camera + microphone running. Press <kbd>R</kbd> to record, <kbd>K</kbd> for keys.");
@@ -5017,10 +5233,11 @@
             return;
           }
 
-          const number = /^\d$/.test(event.key) ? Number(event.key) : null;
+          const digitMatch = /^Digit(\d)$/.exec(event.code || "");
+          const number = digitMatch ? Number(digitMatch[1]) : (/^\d$/.test(event.key) ? Number(event.key) : null);
           if (number !== null) {
             event.preventDefault();
-            selectEffectByNumber(number, event.shiftKey);
+            selectEffectByNumber(number, event.shiftKey || event.altKey);
             return;
           }
 
