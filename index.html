@@ -117,14 +117,17 @@
     }
     #guideScreen {
       z-index: 45;
-      padding: 16px;
+      padding: calc(8px + var(--safe-top)) 10px calc(8px + var(--safe-bottom));
       align-items: center;
       justify-content: center;
+      overflow: hidden;
     }
 
     .guideCard {
       width: min(1040px, 96vw);
-      max-height: min(92vh, 980px);
+      height: calc(100dvh - 16px - var(--safe-top) - var(--safe-bottom));
+      max-height: none;
+      min-height: 0;
       border-radius: 26px;
       border: 1px solid rgba(87,255,231,0.22);
       background: linear-gradient(155deg, rgba(3,14,15,0.96), rgba(3,8,8,0.94));
@@ -160,6 +163,8 @@
       overflow-x: hidden;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
+      flex: 1;
+      min-height: 0;
       display: grid;
       grid-template-columns: 1fr;
       gap: 14px;
@@ -217,7 +222,8 @@
 
     .guideFooter {
       border-top: 1px solid rgba(87,255,231,0.16);
-      padding: 14px 20px calc(14px + var(--safe-bottom));
+      flex: 0 0 auto;
+      padding: 12px 20px calc(12px + var(--safe-bottom));
       display: flex;
       gap: 12px;
       justify-content: flex-end;
@@ -256,6 +262,14 @@
 
     #homeScreen {
       z-index: 30;
+    }
+
+    #homeScreen {
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      padding: calc(10px + var(--safe-top)) 0 calc(10px + var(--safe-bottom));
+      align-items: flex-start;
     }
 
     .homeCard {
@@ -1082,27 +1096,47 @@
     }
 
     @media (max-width: 780px) {
-      .homeCard { min-height: 84vh; }
-      .designer { right: 22px; bottom: 22px; }
-      .homeCopy { padding-bottom: 44px; }
+      .homeCard {
+        min-height: auto;
+        width: min(96vw, 1040px);
+        padding: 16px;
+        margin: 0 auto;
+      }
+      .homeInner { gap: 12px; }
+      .homeCopy { padding-bottom: 0; font-size: 0.88rem; }
+      .homeVisualWrap { aspect-ratio: 4 / 3; }
+      .homeActions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+      .homeActions .primaryButton { grid-column: 1 / -1; }
+      .homeActions .tinyBugButton { grid-column: 1 / -1; }
+      .uiColorPanel { width: 100%; }
+      .uiColorSwatches { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
       #controlDock {
         left: 8px;
         right: 8px;
-        top: calc(8px + var(--safe-top));
+        top: calc(64px + var(--safe-top));
         bottom: calc(8px + var(--safe-bottom));
         width: calc(100vw - 16px);
         max-height: none;
-        height: auto;
+        height: calc(100dvh - 72px - var(--safe-top) - var(--safe-bottom));
       }
       #controlDock.collapsed { transform: translateY(calc(100% - 58px)); }
       .dockBody {
-        max-height: calc(100dvh - 74px - var(--safe-top) - var(--safe-bottom));
-        padding-bottom: calc(60px + var(--safe-bottom));
+        max-height: calc(100dvh - 142px - var(--safe-top) - var(--safe-bottom));
+        padding-bottom: calc(70px + var(--safe-bottom));
       }
-      .panelTabs { grid-template-columns: repeat(2, 1fr); }
+      .dockHeader { flex-shrink: 0; }
+      .panelTabs { grid-template-columns: repeat(2, 1fr); flex-shrink: 0; }
       .toggleRow { grid-template-columns: 1fr; }
       .statusPill { display: none; }
       .brandBugText { display: none; }
+      #guideScreen { padding: calc(6px + var(--safe-top)) 6px calc(6px + var(--safe-bottom)); }
+      .guideCard { width: calc(100vw - 12px); height: calc(100dvh - 12px - var(--safe-top) - var(--safe-bottom)); }
+      .guideHeader { padding: 12px 14px 10px; }
+      .guideBody { padding: 12px 14px 18px; }
+      .guideFooter { justify-content: stretch; }
+      .guideFooter .ghostButton,
+      .guideFooter .primaryButton { flex: 1 1 140px; }
     }
 
     @media (orientation: landscape) and (max-height: 520px) {
@@ -1110,7 +1144,13 @@
       .homeCopy { font-size: 0.86rem; max-width: 560px; padding-bottom: 0; }
       .designer { font-size: 0.66rem; }
       .pixelLetter { --pxSize: clamp(5px, 1.6vw, 11px); }
-      #controlDock { max-height: calc(100vh - 92px); width: min(560px, 48vw); }
+      #controlDock {
+        top: calc(58px + var(--safe-top));
+        bottom: calc(8px + var(--safe-bottom));
+        height: calc(100dvh - 66px - var(--safe-top) - var(--safe-bottom));
+        width: min(560px, 48vw);
+      }
+      .dockBody { max-height: calc(100dvh - 132px - var(--safe-top) - var(--safe-bottom)); }
       #cheatSheet { max-height: calc(100vh - 92px); width: min(520px, 48vw); }
     }
   </style>
@@ -1159,6 +1199,17 @@
             <input id="uiColorInput" type="color" value="#57ffe7" hidden />
             <button id="homeHelpButton" class="ghostButton">How To</button>
             <button id="homeBugButton" class="tinyBugButton" type="button">Report a Bug</button>
+          </div>
+          <div id="uiColorPanel" class="uiColorPanel hidden" aria-label="UI color controls">
+            <div class="uiColorSwatches">
+              <button class="uiSwatch" type="button" data-ui-color="#57ffe7" style="background:#57ffe7" aria-label="Teal UI"></button>
+              <button class="uiSwatch" type="button" data-ui-color="#ff8a28" style="background:#ff8a28" aria-label="Orange UI"></button>
+              <button class="uiSwatch" type="button" data-ui-color="#78a7ff" style="background:#78a7ff" aria-label="Blue UI"></button>
+              <button class="uiSwatch" type="button" data-ui-color="#ff6de9" style="background:#ff6de9" aria-label="Pink UI"></button>
+              <button class="uiSwatch" type="button" data-ui-color="#57ff8a" style="background:#57ff8a" aria-label="Green UI"></button>
+              <button class="uiSwatch" type="button" data-ui-color="#c36eff" style="background:#c36eff" aria-label="Purple UI"></button>
+            </div>
+            <label class="uiHueRow">Hue <input id="uiHueRange" type="range" min="0" max="359" step="1" value="171" /></label>
           </div>
           <p class="tinyNote">For iPhone/iPad, start from a tap so Safari can unlock camera, mic, and audio analysis. MP4 export appears when the browser supports MediaRecorder MP4; otherwise the app records a WebM fallback.</p>
         </div>
@@ -1278,6 +1329,7 @@
         <strong>Controls</strong>
         <div>
           <button id="keysButton" class="miniButton" title="Keyboard shortcuts">Keys</button>
+          <button id="appHomeButton" class="miniButton" title="Return home">Home</button>
           <button id="helpButton" class="miniButton" title="Help and how-to guide">Help</button>
           <button id="mapButton" class="miniButton mapButton" title="Projection mapping">Map</button>
           <button id="fullButton" class="miniButton" title="True fullscreen">Full</button>
@@ -2374,11 +2426,21 @@
         return (h * 60 + 360) % 360;
       }
 
+      function setUIHue(hue, saveValue = true) {
+        const baseTealHue = 171;
+        const normalizedHue = ((Number(hue) % 360) + 360) % 360;
+        const rotate = Math.round(normalizedHue - baseTealHue);
+        document.documentElement.style.setProperty("--uiHueRotate", `${rotate}deg`);
+        const range = document.getElementById("uiHueRange");
+        if (range) range.value = String(Math.round(normalizedHue));
+        if (saveValue) {
+          try { localStorage.setItem("marzview_ui_hue", String(Math.round(normalizedHue))); } catch (e) {}
+        }
+      }
+
       function applyUIColor(hex) {
         const selectedHue = hexToHue(hex);
-        const baseTealHue = 171;
-        const rotate = Math.round(selectedHue - baseTealHue);
-        document.documentElement.style.setProperty("--uiHueRotate", `${rotate}deg`);
+        setUIHue(selectedHue, true);
         try { localStorage.setItem("marzview_ui_color", hex); } catch (e) {}
         showToast("UI color updated.");
       }
@@ -3527,6 +3589,7 @@
         document.getElementById("secondaryToggleButton").addEventListener("click", () => toggleEffectLayer("secondary"));
         document.getElementById("normalQualityButton").addEventListener("click", toggleNormalQuality);
         document.getElementById("keysButton").addEventListener("click", () => cheatSheet.classList.toggle("hidden"));
+        document.getElementById("appHomeButton").addEventListener("click", showHome);
         document.getElementById("helpButton").addEventListener("click", () => showGuide((mediaStream || demoMode) ? "resume" : "live"));
         document.getElementById("mapButton").addEventListener("click", activateMapPanel);
         document.getElementById("fullButton").addEventListener("click", toggleTrueFullscreen);
@@ -3535,13 +3598,23 @@
         masterHideButton.addEventListener("click", toggleMasterUI);
         mapGuideToggleButton.addEventListener("click", toggleMapGuides);
         document.getElementById("homeHelpButton").addEventListener("click", () => showGuide("live"));
-        document.getElementById("uiColorButton").addEventListener("click", () => document.getElementById("uiColorInput").click());
+        document.getElementById("uiColorButton").addEventListener("click", () => {
+          document.getElementById("uiColorPanel").classList.toggle("hidden");
+        });
         document.getElementById("uiColorInput").addEventListener("input", event => applyUIColor(event.target.value));
+        document.getElementById("uiHueRange").addEventListener("input", event => setUIHue(event.target.value, true));
+        document.querySelectorAll(".uiSwatch[data-ui-color]").forEach(button => {
+          button.addEventListener("click", () => {
+            const color = button.dataset.uiColor;
+            document.getElementById("uiColorInput").value = color;
+            applyUIColor(color);
+          });
+        });
+        const savedUIHue = (() => { try { return localStorage.getItem("marzview_ui_hue"); } catch (e) { return null; } })();
         const savedUIColor = (() => { try { return localStorage.getItem("marzview_ui_color"); } catch (e) { return null; } })();
-        if (savedUIColor) {
-          document.getElementById("uiColorInput").value = savedUIColor;
-          applyUIColor(savedUIColor);
-        }
+        if (savedUIColor) document.getElementById("uiColorInput").value = savedUIColor;
+        if (savedUIHue !== null) setUIHue(savedUIHue, false);
+        else if (savedUIColor) applyUIColor(savedUIColor);
         document.getElementById("guideHomeButton").addEventListener("click", showHome);
         document.getElementById("guideLaunchButton").addEventListener("click", launchFromGuide);
         document.getElementById("homeBugButton").addEventListener("click", reportBug);
@@ -3722,11 +3795,7 @@
             ? { deviceId: { exact: activeCameraDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 60 } }
             : { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 60 } };
           mediaStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              ...videoConstraints,
-              height: { ideal: 720 },
-              frameRate: { ideal: 30, max: 60 }
-            },
+            video: videoConstraints,
             audio: {
               echoCancellation: false,
               noiseSuppression: false,
@@ -4500,7 +4569,7 @@
       }
 
       function installScrollLock() {
-        const isScrollable = target => !!(target && target.closest && target.closest('.dockBody, .guideBody, #cheatSheet'));
+        const isScrollable = target => !!(target && target.closest && target.closest('.dockBody, .guideBody, .guideFooter, #homeScreen, #cheatSheet'));
         const blocker = event => {
           if (!isScrollable(event.target)) event.preventDefault();
         };
