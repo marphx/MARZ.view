@@ -77,7 +77,7 @@
       pointer-events: auto;
     }
 
-    #videoSource, #sourceCanvas, #scratchCanvas {
+    #videoSource, #mediaVideoSource, #mediaImageSource, #sourceCanvas, #scratchCanvas {
       position: absolute;
       width: 1px;
       height: 1px;
@@ -142,16 +142,20 @@
 
     .homeCard {
       position: relative;
-      width: min(980px, 94vw);
-      min-height: min(640px, 86vh);
+      width: min(1040px, 94vw);
+      min-height: min(720px, 90vh);
       border: 1px solid rgba(87, 255, 231, 0.24);
-      border-radius: 28px;
+      border-radius: 30px;
       background:
-        linear-gradient(140deg, rgba(3, 22, 22, 0.84), rgba(2, 6, 6, 0.72)),
-        repeating-linear-gradient(90deg, rgba(87, 255, 231, 0.03) 0 1px, transparent 1px 9px);
-      box-shadow: var(--shadow), inset 0 0 60px rgba(87, 255, 231, 0.06);
-      padding: clamp(20px, 5vw, 56px);
+        radial-gradient(circle at 50% 10%, rgba(87,255,231,0.10), transparent 38%),
+        radial-gradient(circle at 82% 18%, rgba(255,138,40,0.10), transparent 32%),
+        linear-gradient(150deg, rgba(3, 22, 22, 0.84), rgba(2, 6, 6, 0.78));
+      box-shadow: var(--shadow), inset 0 0 64px rgba(87, 255, 231, 0.07);
+      padding: clamp(20px, 4vw, 56px);
       overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .homeCard::before {
@@ -159,9 +163,18 @@
       position: absolute;
       inset: -40%;
       background:
-        conic-gradient(from 0deg, transparent, rgba(87, 255, 231, 0.12), transparent, rgba(255, 138, 40, 0.10), transparent);
+        conic-gradient(from 0deg, transparent, rgba(87, 255, 231, 0.09), transparent, rgba(255, 138, 40, 0.08), transparent);
       animation: slowRotate 16s linear infinite;
-      opacity: 0.8;
+      opacity: 0.72;
+      pointer-events: none;
+    }
+
+    .homeCard::after {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: 29px;
+      border: 1px solid rgba(255,255,255,0.04);
       pointer-events: none;
     }
 
@@ -169,10 +182,13 @@
       position: relative;
       z-index: 1;
       min-height: inherit;
+      width: min(900px, 100%);
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      gap: 28px;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      text-align: center;
     }
 
     @keyframes slowRotate { to { transform: rotate(360deg); } }
@@ -223,27 +239,79 @@
     }
 
     .homeCopy {
-      max-width: 660px;
-      color: var(--muted);
-      line-height: 1.6;
-      font-size: clamp(0.95rem, 2vw, 1.22rem);
+      max-width: 740px;
+      color: rgba(234,255,251,0.78);
+      line-height: 1.5;
+      font-size: clamp(0.92rem, 1.8vw, 1.08rem);
       text-shadow: 0 0 10px rgba(87, 255, 231, 0.12);
+      margin: 0 auto;
+    }
+
+    .homeHeroBlock {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .homeVisualWrap {
+      width: min(760px, 100%);
+      aspect-ratio: 16 / 10;
+      position: relative;
+      border-radius: 26px;
+      padding: clamp(10px, 1.8vw, 16px);
+      background: linear-gradient(180deg, rgba(0,0,0,0.22), rgba(0,0,0,0.32));
+      border: 1px solid rgba(87,255,231,0.18);
+      box-shadow: 0 0 44px rgba(87,255,231,0.12), inset 0 0 24px rgba(87,255,231,0.07);
+      overflow: hidden;
+    }
+
+    .homeVisualWrap::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 20%, rgba(87,255,231,0.10), transparent 42%);
+      pointer-events: none;
+    }
+
+    #homeMotionCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: 18px;
+      background: radial-gradient(circle at 50% 50%, rgba(5,18,18,0.96), rgba(2,5,5,0.98));
+      box-shadow: inset 0 0 32px rgba(87,255,231,0.08);
+    }
+
+    .homeByline {
+      color: rgba(255, 244, 221, 0.9);
+      font-size: clamp(0.82rem, 1.7vw, 1rem);
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      text-shadow: 0 0 10px rgba(255,138,40,0.18);
     }
 
     .homeActions {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      width: min(760px, 100%);
       gap: 12px;
-      align-items: center;
-      margin-top: 12px;
+      align-items: stretch;
+      margin-top: 2px;
+    }
+
+    .homeActions .primaryButton,
+    .homeActions .ghostButton,
+    .homeActions .tinyBugButton {
+      width: 100%;
+      justify-self: stretch;
+      min-height: 48px;
     }
 
     .designer {
-      position: absolute;
-      right: clamp(18px, 4vw, 44px);
-      bottom: clamp(18px, 4vw, 44px);
       color: rgba(234, 255, 251, 0.82);
-      text-align: right;
+      text-align: center;
       font-size: clamp(0.72rem, 1.5vw, 0.95rem);
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -299,6 +367,27 @@
       text-align: center;
       line-height: 1.35;
       margin-top: 4px;
+    }
+
+
+    @media (max-width: 640px) {
+      .homeCard {
+        min-height: min(760px, 92vh);
+        padding: 18px;
+      }
+      .homeInner {
+        gap: 14px;
+      }
+      .homeVisualWrap {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+      }
+      .homeActions {
+        grid-template-columns: 1fr 1fr;
+      }
+      .homeActions .tinyBugButton {
+        grid-column: 1 / -1;
+      }
     }
 
     .primaryButton, .ghostButton, .miniButton {
@@ -366,6 +455,47 @@
       font-size: 0.74rem;
       line-height: 1.5;
       margin-top: 10px;
+    }
+
+    .pianoSlots {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .slotButton {
+      position: relative;
+      min-height: 58px;
+      border-radius: 0 0 12px 12px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(220,230,236,0.84));
+      color: #0f1822;
+      font-weight: 900;
+      box-shadow: inset 0 -8px 12px rgba(0,0,0,0.12), 0 6px 16px rgba(0,0,0,0.18);
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .slotButton.black {
+      background: linear-gradient(180deg, rgba(45,54,67,0.98), rgba(18,24,32,0.98));
+      color: #eef7ff;
+      min-height: 44px;
+      margin-top: 0;
+    }
+
+    .slotButton.active {
+      outline: 2px solid rgba(255,138,40,0.95);
+      box-shadow: 0 0 18px rgba(255,138,40,0.34), inset 0 -6px 12px rgba(0,0,0,0.18);
+    }
+
+    .slotButton.loaded::after {
+      content: "•";
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      color: #18c26e;
+      font-size: 1rem;
     }
 
     #topBar {
@@ -625,6 +755,7 @@
     .cat-nav { color: #57ffe7; border-color: rgba(87,255,231,0.38); }
     .cat-effects { color: #57ff8a; border-color: rgba(87,255,138,0.38); }
     .cat-camera { color: #78a7ff; border-color: rgba(120,167,255,0.38); }
+    .cat-map { color: #ff7a7a; border-color: rgba(255,122,122,0.42); }
     .cat-capture { color: #ff8a28; border-color: rgba(255,138,40,0.38); }
     .cat-system { color: #ff6de9; border-color: rgba(255,109,233,0.38); }
 
@@ -812,6 +943,8 @@
     <canvas id="visualCanvas" aria-label="MARZview audio reactive camera canvas"></canvas>
     <canvas id="mapCanvas" aria-label="MARZview mapping canvas"></canvas>
     <video id="videoSource" playsinline autoplay muted></video>
+    <video id="mediaVideoSource" playsinline muted loop></video>
+    <img id="mediaImageSource" alt="Custom media source" />
     <canvas id="sourceCanvas"></canvas>
     <canvas id="scratchCanvas"></canvas>
 
@@ -831,20 +964,23 @@
     <section id="homeScreen" class="screen" aria-label="Home screen">
       <div class="homeCard">
         <div class="homeInner">
-          <div>
-            <div id="homePixelTitle" class="pixelTitle" aria-label="MARZview"></div>
-            <p class="homeCopy">
-              Camera becomes luminous signal. Microphone becomes motion. Stack two neon synth visuals, bend their texture, trail, glow, bitrate, and color drift, then record the live canvas with audio.
-            </p>
-            <div class="homeActions">
-              <button id="startButton" class="primaryButton">Start Camera + Mic</button>
-              <button id="demoButton" class="ghostButton">Open Demo Visualizer</button>
-              <button id="loaderPreviewButton" class="ghostButton">Replay Loader</button>
-              <button id="homeBugButton" class="tinyBugButton" type="button">Report a Bug</button>
+          <div id="homePixelTitle" class="pixelTitle" aria-label="MARZview"></div>
+          <p class="homeCopy">
+            Luminous camera feedback for projection, performance, and live visual experimentation.
+          </p>
+          <div class="homeHeroBlock">
+            <div class="homeVisualWrap">
+              <canvas id="homeMotionCanvas" aria-label="Animated pixel particle frame"></canvas>
             </div>
-            <p class="tinyNote">For iPhone/iPad, start from a tap so Safari can unlock camera, mic, and audio analysis. MP4 export appears when the browser supports MediaRecorder MP4; otherwise the app records a WebM fallback.</p>
+            <div class="homeByline">designed by Mario Garcia, for artists and innovators</div>
           </div>
-          <div class="designer">Designed by<br/>Mario Garcia</div>
+          <div class="homeActions">
+            <button id="startButton" class="primaryButton">Start Camera + Mic</button>
+            <button id="demoButton" class="ghostButton">Open Demo Visualizer</button>
+            <button id="loaderPreviewButton" class="ghostButton">Replay Loader</button>
+            <button id="homeBugButton" class="tinyBugButton" type="button">Report a Bug</button>
+          </div>
+          <p class="tinyNote">For iPhone/iPad, start from a tap so Safari can unlock camera, mic, and audio analysis. MP4 export appears when the browser supports MediaRecorder MP4; otherwise the app records a WebM fallback.</p>
         </div>
       </div>
     </section>
@@ -860,6 +996,8 @@
         <div>
           <button id="keysButton" class="miniButton" title="Keyboard shortcuts">Keys</button>
           <button id="mapButton" class="miniButton mapButton" title="Projection mapping">Map</button>
+          <button id="fullButton" class="miniButton" title="True fullscreen">Full</button>
+          <button id="resetNormalButton" class="miniButton" title="Return to smooth normal mode">Normal</button>
           <button id="hideUIButton" class="miniButton" title="Hide interface">Hide UI</button>
           <button id="randomizeButton" class="miniButton" title="Randomize look">Dice</button>
           <button id="appBugButton" class="miniButton" title="Report a bug">Bug</button>
@@ -963,6 +1101,65 @@
             <button id="mapModeMaskButton" class="ghostButton modeButton">Mask Outside</button>
             <button id="mapModeWarpButton" class="ghostButton modeButton">Contort to Shape</button>
           </div>
+          <div class="sectionTitle" style="margin-top:14px;">Custom media <span>upload photo or video slots</span></div>
+          <input id="mediaUpload" type="file" accept="image/*,video/*,.gif" multiple hidden />
+          <div class="buttonGrid three">
+            <button id="mediaLoadButton" class="ghostButton">Load Files / GIFs</button>
+            <button id="mediaCameraButton" class="ghostButton">Use Camera</button>
+            <button id="mediaPlayPauseButton" class="ghostButton">Play/Pause</button>
+          </div>
+          <div class="sectionTitle" style="margin-top:12px;">Camera clone frames <span>show live footage in multiple places</span></div>
+          <div class="buttonGrid four">
+            <button id="addCloneButton" class="ghostButton">Add Source Frame</button>
+            <button id="useCloneBaseButton" class="ghostButton">Edit Base Source</button>
+            <button id="swapFramesButton" class="ghostButton">Swap Frames</button>
+            <button id="clearCloneButton" class="ghostButton">Clear Selected Clone</button>
+          </div>
+          <div class="buttonGrid four" id="cloneSlotButtons">
+            <button class="ghostButton cloneSlotButton" data-clone-slot="0" type="button">Clone 1</button>
+            <button class="ghostButton cloneSlotButton" data-clone-slot="1" type="button">Clone 2</button>
+            <button class="ghostButton cloneSlotButton" data-clone-slot="2" type="button">Clone 3</button>
+            <button class="ghostButton cloneSlotButton" data-clone-slot="3" type="button">Clone 4</button>
+          </div>
+          <div class="mapHint" id="cloneStatusText">Add up to four live camera clone frames, then select one to edit its own map, zoom, pan, and squish settings.</div>
+          <div class="pianoSlots" id="mediaSlotButtons">
+            <button class="slotButton white loaded active" data-slot="0" type="button">1</button>
+            <button class="slotButton black" data-slot="1" type="button">2</button>
+            <button class="slotButton white" data-slot="2" type="button">3</button>
+            <button class="slotButton black" data-slot="3" type="button">4</button>
+            <button class="slotButton white" data-slot="4" type="button">5</button>
+            <button class="slotButton black" data-slot="5" type="button">6</button>
+            <button class="slotButton white" data-slot="6" type="button">7</button>
+            <button class="slotButton black" data-slot="7" type="button">8</button>
+          </div>
+          <div class="mapHint" id="mediaStatusText">Camera is active. Load photos, videos, or looping GIFs into the piano slots, then switch to a slot and map it. GIFs are held until loaded so the canvas does not accidentally render black placeholder frames.</div>
+
+          <div class="sectionTitle" style="margin-top:14px;">Source fit <span>zoom, pan, squish</span></div>
+          <div class="buttonGrid three">
+            <button id="mapZoomOutButton" class="ghostButton">Z−</button>
+            <button id="mapZoomInButton" class="ghostButton">Z+</button>
+            <button id="mapContentResetButton" class="ghostButton">Reset Fit</button>
+          </div>
+          <div class="controlRow">
+            <div><label for="mapContentZoom">Map zoom</label><small>Zoom the feedback inside the mapped frame.</small></div><span class="valueReadout" id="mapContentZoomVal"></span>
+            <input id="mapContentZoom" type="range" min="0.25" max="4" step="0.01" data-setting="mapContentZoom" />
+          </div>
+          <div class="controlRow">
+            <div><label for="mapContentX">Map pan X</label><small>Shift feedback left or right inside the frame.</small></div><span class="valueReadout" id="mapContentXVal"></span>
+            <input id="mapContentX" type="range" min="-1" max="1" step="0.01" data-setting="mapContentX" />
+          </div>
+          <div class="controlRow">
+            <div><label for="mapContentY">Map pan Y</label><small>Shift feedback up or down inside the frame.</small></div><span class="valueReadout" id="mapContentYVal"></span>
+            <input id="mapContentY" type="range" min="-1" max="1" step="0.01" data-setting="mapContentY" />
+          </div>
+          <div class="controlRow">
+            <div><label for="mapContentScaleX">Squish width</label><small>Stretch or squeeze the image horizontally.</small></div><span class="valueReadout" id="mapContentScaleXVal"></span>
+            <input id="mapContentScaleX" type="range" min="0.25" max="3" step="0.01" data-setting="mapContentScaleX" />
+          </div>
+          <div class="controlRow">
+            <div><label for="mapContentScaleY">Squish height</label><small>Stretch or squeeze the image vertically.</small></div><span class="valueReadout" id="mapContentScaleYVal"></span>
+            <input id="mapContentScaleY" type="range" min="0.25" max="3" step="0.01" data-setting="mapContentScaleY" />
+          </div>
           <div class="mapHint">
             Drag the shape or its handles directly on the screen. In <strong>Custom</strong> mode, the four main corner points stay permanent. Tap inside the screen area to add a new point, tap an added point again to remove it, and drag any point to reshape the frame.
           </div>
@@ -1012,45 +1209,48 @@
       <h3>Keyboard cheat sheet</h3>
       <div class="keyGrid">
         <div class="keyGroup cat-nav">Navigation + panels</div>
-        <div class="keyCombo cat-nav"><kbd>K</kbd></div><div>Show / hide this color-coded shortcut guide.</div>
-        <div class="keyCombo cat-nav"><kbd>U</kbd></div><div>Master hide/show. Fullscreen visual mode leaves only the tiny gray dot in the top-right corner.</div>
-        <div class="keyCombo cat-nav"><kbd>Map</kbd></div><div>Open the projection mapping panel and drag the frame on screen.</div>
-        <div class="keyCombo cat-nav"><kbd>A</kbd></div><div>Snap MARZview into keyboard mapping mode for custom screen editing.</div>
+        <div class="keyCombo cat-nav"><kbd>K</kbd></div><div>Show / hide this shortcut guide.</div>
+        <div class="keyCombo cat-nav"><kbd>U</kbd></div><div>Master hide/show. Leaves only the small gray dot when hidden.</div>
         <div class="keyCombo cat-nav"><kbd>E</kbd></div><div>Open Effects panel.</div>
         <div class="keyCombo cat-nav"><kbd>V</kbd></div><div>Open Visual panel.</div>
         <div class="keyCombo cat-nav"><kbd>X</kbd></div><div>Open Export panel.</div>
         <div class="keyCombo cat-nav"><kbd>C</kbd></div><div>Open Camera panel.</div>
         <div class="keyCombo cat-nav"><kbd>P</kbd></div><div>Collapse / expand the control dock.</div>
-        <div class="keyCombo cat-nav"><kbd>Esc</kbd></div><div>Hide the shortcut guide.</div>
+        <div class="keyCombo cat-nav"><kbd>Esc</kbd></div><div>Hide the guide.</div>
 
         <div class="keyGroup cat-effects">Effects + layers</div>
-        <div class="keyCombo cat-effects"><kbd>1</kbd>–<kbd>0</kbd></div><div>Change primary effect. <kbd>1</kbd> is Normal Camera.</div>
-        <div class="keyCombo cat-effects"><kbd>Shift</kbd> + <kbd>1</kbd>–<kbd>0</kbd></div><div>Change secondary effect. <kbd>Shift</kbd> + <kbd>1</kbd> is Normal Camera.</div>
-        <div class="keyCombo cat-effects"><kbd>[</kbd></div><div>Primary layer on / off. If both layers are off, Normal Camera fallback activates.</div>
-        <div class="keyCombo cat-effects"><kbd>]</kbd></div><div>Secondary layer on / off. If both layers are off, Normal Camera fallback activates.</div>
-        <div class="keyCombo cat-effects"><kbd>N</kbd></div><div>Toggle Normal Camera quality: Sharp / Lo-Fi.</div>
-        <div class="keyCombo cat-effects"><kbd>Shift</kbd> + <kbd>B</kbd></div><div>Randomize the visual settings.</div>
+        <div class="keyCombo cat-effects"><kbd>1</kbd>–<kbd>0</kbd></div><div>Change the primary effect. <kbd>1</kbd> selects Normal Camera.</div>
+        <div class="keyCombo cat-effects"><kbd>Shift</kbd> + <kbd>1</kbd>–<kbd>0</kbd></div><div>Change the secondary effect. <kbd>Shift</kbd> + <kbd>1</kbd> selects Normal Camera.</div>
+        <div class="keyCombo cat-effects"><kbd>[</kbd></div><div>Toggle the primary effect on / off.</div>
+        <div class="keyCombo cat-effects"><kbd>]</kbd></div><div>Toggle the secondary effect on / off.</div>
+        <div class="keyCombo cat-effects"><kbd>N</kbd></div><div>Toggle sharper normal-camera quality.</div>
+        <div class="keyCombo cat-effects"><kbd>Shift</kbd> + <kbd>B</kbd></div><div>Randomize the look.</div>
 
-        <div class="keyGroup cat-camera">Slider focus controls</div>
-        <div class="keyCombo cat-camera"><kbd>Hold Q</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Primary Mix.</div>
-        <div class="keyCombo cat-camera"><kbd>Hold W</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Secondary Mix.</div>
-        <div class="keyCombo cat-camera"><kbd>Hold I</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Intensity.</div>
-        <div class="keyCombo cat-camera"><kbd>Hold M</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Mic Sensitivity.</div>
-        <div class="keyCombo cat-camera"><kbd>Hold G</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Glow.</div>
-        <div class="keyCombo cat-camera"><kbd>Hold T</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Texture.</div>
-        <div class="keyCombo cat-camera"><kbd>Hold B</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Visual Bitrate.</div>
-        <div class="keyCombo cat-camera"><kbd>Hold L</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Trail length.</div>
-        <div class="keyCombo cat-camera"><kbd>Hold O</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Edge Boost.</div>
-        <div class="keyCombo cat-camera"><kbd>Hold H</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Color Drift.</div>
-        <div class="keyCombo cat-camera"><kbd>Hold F</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Feedback amount.</div>
-        <div class="keyCombo cat-camera"><kbd>Hold J</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Zoom Warp.</div>
-        <div class="keyCombo cat-camera"><kbd>Hold Y</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Camera Ghost.</div>
-        <div class="keyCombo cat-camera"><kbd>Hold ;</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Export Bitrate.</div>
-        <div class="keyCombo cat-camera"><kbd>Hold '</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>FPS.</div>
-        <div class="keyCombo cat-camera"><kbd>Shift</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Larger adjustment steps for whichever slider is active.</div>
+        <div class="keyGroup cat-camera">Live controls + sliders</div>
+        <div class="keyCombo cat-camera"><kbd>Q</kbd>/<kbd>W</kbd></div><div>Primary / secondary mix.</div>
+        <div class="keyCombo cat-camera"><kbd>I</kbd>/<kbd>M</kbd></div><div>Intensity / mic sensitivity.</div>
+        <div class="keyCombo cat-camera"><kbd>G</kbd>/<kbd>T</kbd></div><div>Glow / texture.</div>
+        <div class="keyCombo cat-camera"><kbd>L</kbd>/<kbd>H</kbd></div><div>Trail / edge boost.</div>
+        <div class="keyCombo cat-camera"><kbd>O</kbd>/<kbd>B</kbd></div><div>Outline / bit depth.</div>
+        <div class="keyCombo cat-camera"><kbd>R</kbd>/<kbd>F</kbd></div><div>Color drift / feedback amount.</div>
+        <div class="keyCombo cat-camera"><kbd>J</kbd>/<kbd>Y</kbd></div><div>Zoom warp / camera ghost.</div>
+        <div class="keyCombo cat-camera"><kbd>;</kbd>/<kbd>'</kbd></div><div>Export bitrate / FPS.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold slider key</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Adjust that setting. Add <kbd>Shift</kbd> for larger changes.</div>
 
-        <div class="keyCombo cat-camera"><kbd>Arrows</kbd></div><div>In keyboard mapping mode, arrows jump to the next mapping point when D is released.</div>
-        <div class="keyCombo cat-camera"><kbd>Hold D</kbd> + <kbd>←</kbd>/<kbd>→</kbd>/<kbd>↑</kbd>/<kbd>↓</kbd></div><div>With the red beacon active, hold D and use arrows to crop / move the selected mapping point.</div>
+        <div class="keyGroup cat-map">Projection mapping</div>
+        <div class="keyCombo cat-map"><kbd>A</kbd></div><div>Open the Map panel and snap into keyboard mapping mode.</div>
+        <div class="keyCombo cat-map"><kbd>Arrows</kbd></div><div>Step through mapping points when no modifier is held.</div>
+        <div class="keyCombo cat-map"><kbd>D</kbd> + <kbd>Arrows</kbd></div><div>Move / crop the selected mapping point.</div>
+        <div class="keyCombo cat-map"><kbd>V</kbd> + <kbd>Arrows</kbd></div><div>Pan the active photo / video / camera feed inside the mapped frame.</div>
+        <div class="keyCombo cat-map"><kbd>X</kbd> + <kbd>Arrows</kbd></div><div>Squish or stretch the active media inside the mapped frame.</div>
+        <div class="keyCombo cat-map"><kbd>Z</kbd> + <kbd>+</kbd>/<kbd>-</kbd></div><div>Zoom the active media inside the mapped frame.</div>
+        <div class="keyCombo cat-map"><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></div><div>Cycle through mapped frames while in map mode.</div>
+        <div class="keyCombo cat-map"><kbd>T</kbd></div><div>Swap / rotate the assigned uploaded photos, GIFs, videos, or live feeds across active mapped frames while preserving frame sizes.</div>
+        <div class="keyCombo cat-map"><kbd>Pinch</kbd></div><div>Pinch on the mapping canvas to zoom the selected media or mapped frame.</div>
+        <div class="keyCombo cat-map"><kbd>F</kbd></div><div>Request true fullscreen and reduce the interface to the small hide/show dot.</div>
+        <div class="keyCombo cat-map"><kbd>Piano Slots</kbd></div><div>On-screen media keys switch between custom photo/video/GIF slots for casting and editing.</div>
+        <div class="keyCombo cat-map"><kbd>Clone 1–4</kbd></div><div>Use the on-screen clone buttons to add and edit multiple live camera frames at once.</div>
+        <div class="keyCombo cat-map"><kbd>Normal</kbd></div><div>On-screen reset returns the app to a smooth normal camera view with effects off.</div>
 
         <div class="keyGroup cat-capture">Capture</div>
         <div class="keyCombo cat-capture"><kbd>R</kbd></div><div>Start / stop recording.</div>
@@ -1059,10 +1259,10 @@
         <div class="keyGroup cat-system">System + clipboard</div>
         <div class="keyCombo cat-system"><kbd>Space</kbd></div><div>Pause / resume the visual engine.</div>
         <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>C</kbd></div><div>Copy the current preset JSON.</div>
-        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>V</kbd></div><div>Paste preset JSON.</div>
-        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd></div><div>Undo setting change.</div>
+        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>V</kbd></div><div>Paste a preset JSON.</div>
+        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd></div><div>Undo.</div>
         <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></div><div>Redo on Mac-style keyboards.</div>
-        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Y</kbd></div><div>Redo alternate shortcut.</div>
+        <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Y</kbd></div><div>Alternate redo shortcut.</div>
       </div>
     </aside>
 
@@ -1138,6 +1338,11 @@
         mapFrameY: 0.5,
         mapFrameW: 0.54,
         mapFrameH: 0.54,
+        mapContentZoom: 1,
+        mapContentX: 0,
+        mapContentY: 0,
+        mapContentScaleX: 1,
+        mapContentScaleY: 1,
         exportBitrate: 8,
         fps: 30
       });
@@ -1149,9 +1354,14 @@
       let lastRange = null;
       let mapCustomPoints = [];
       let mapDrag = null;
+      const mapPointerCache = new Map();
+      let mapPinch = null;
       let keyboardMapMode = false;
       let keyboardMapSelectedIndex = 0;
       let keyboardMapCropHeld = false;
+      let keyboardMapPanHeld = false;
+      let keyboardMapSquishHeld = false;
+      let keyboardZoomHeld = false;
       let activeShortcutSetting = null;
       let activeShortcutKey = null;
       let isRunning = false;
@@ -1159,6 +1369,12 @@
       let demoMode = false;
       let masterUIHidden = false;
       let mapEditorVisible = false;
+      let activeSourceMode = "camera";
+      let activeMediaSlot = 0;
+      let activeCloneSlot = 0;
+      let cameraProjectionState = null;
+      let cameraCloneSlots = Array.from({ length: 4 }, () => null);
+      let mediaSlots = Array.from({ length: 8 }, () => null);
       let mediaStream = null;
       let audioContext = null;
       let analyser = null;
@@ -1178,6 +1394,8 @@
       const mapCanvas = document.getElementById("mapCanvas");
       const mapCtx = mapCanvas.getContext("2d");
       const video = document.getElementById("videoSource");
+      const mediaVideo = document.getElementById("mediaVideoSource");
+      const mediaImage = document.getElementById("mediaImageSource");
       const sourceCanvas = document.getElementById("sourceCanvas");
       const sourceCtx = sourceCanvas.getContext("2d", { willReadFrequently: true });
       const scratchCanvas = document.getElementById("scratchCanvas");
@@ -1220,6 +1438,8 @@
       const scratchCtx = scratchCanvas.getContext("2d", { willReadFrequently: true });
       const loaderCanvas = document.getElementById("loaderCanvas");
       const loaderCtx = loaderCanvas.getContext("2d");
+      const homeMotionCanvas = document.getElementById("homeMotionCanvas");
+      const homeMotionCtx = homeMotionCanvas.getContext("2d");
       const homeScreen = document.getElementById("homeScreen");
       const loaderScreen = document.getElementById("loaderScreen");
       const controlDock = document.getElementById("controlDock");
@@ -1266,6 +1486,180 @@
       buildPixelTitle("MARZVIEW", document.getElementById("homePixelTitle"));
       buildPixelTitle("M", document.getElementById("tinyPixelTitle"), true);
 
+
+      let homeMotionState = null;
+
+      function resizeHomeMotionCanvas() {
+        const rect = homeMotionCanvas.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        homeMotionCanvas.width = Math.max(10, Math.round(rect.width * dpr));
+        homeMotionCanvas.height = Math.max(10, Math.round(rect.height * dpr));
+        homeMotionCtx.setTransform(1, 0, 0, 1, 0, 0);
+        if (!homeMotionState) initHomeMotionState();
+      }
+
+      function generateMiniBox(x, y, size, count) {
+        const pts = [];
+        for (let i = 0; i < count; i++) {
+          const edge = i % 4;
+          const t = (i / Math.max(1, count - 1));
+          if (edge === 0) pts.push({ x: x - size / 2 + t * size, y: y - size / 2 });
+          if (edge === 1) pts.push({ x: x + size / 2, y: y - size / 2 + t * size });
+          if (edge === 2) pts.push({ x: x + size / 2 - t * size, y: y + size / 2 });
+          if (edge === 3) pts.push({ x: x - size / 2, y: y + size / 2 - t * size });
+        }
+        return pts;
+      }
+
+      function initHomeMotionState() {
+        const w = homeMotionCanvas.width || 900;
+        const h = homeMotionCanvas.height || 560;
+        const cx = w / 2;
+        const cy = h / 2;
+        const boxW = w * 0.72;
+        const boxH = h * 0.58;
+        const framePoints = [];
+        const count = 180;
+        for (let i = 0; i < count; i++) {
+          const p = i / count;
+          let tx, ty;
+          if (p < 0.25) {
+            tx = cx - boxW / 2 + (p / 0.25) * boxW;
+            ty = cy - boxH / 2;
+          } else if (p < 0.5) {
+            tx = cx + boxW / 2;
+            ty = cy - boxH / 2 + ((p - 0.25) / 0.25) * boxH;
+          } else if (p < 0.75) {
+            tx = cx + boxW / 2 - ((p - 0.5) / 0.25) * boxW;
+            ty = cy + boxH / 2;
+          } else {
+            tx = cx - boxW / 2;
+            ty = cy + boxH / 2 - ((p - 0.75) / 0.25) * boxH;
+          }
+          framePoints.push({
+            tx, ty,
+            x: rand(-w * 0.2, w * 1.2),
+            y: rand(-h * 0.2, h * 1.2),
+            size: rand(2.8, 5.4),
+            delay: (i / count) * 0.55,
+            pulse: rand(0, Math.PI * 2)
+          });
+        }
+        const colors = [
+          'rgba(255,138,40,0.95)',
+          'rgba(255,90,110,0.92)',
+          'rgba(195,110,255,0.92)'
+        ];
+        const bounceBits = Array.from({ length: 54 }, (_, i) => ({
+          x: cx + rand(-boxW * 0.36, boxW * 0.36),
+          y: cy + rand(-boxH * 0.30, boxH * 0.30),
+          vx: rand(-1.8, 1.8),
+          vy: rand(-1.5, 1.5),
+          size: rand(2.4, 4.4),
+          color: colors[i % colors.length],
+          phase: rand(0, Math.PI * 2)
+        }));
+        homeMotionState = {
+          cx, cy, boxW, boxH, framePoints, bounceBits,
+          start: performance.now(),
+          lastMiniCycle: performance.now(),
+          miniBoxes: [
+            { x: cx - boxW * 0.14, y: cy - boxH * 0.08, size: Math.min(boxW, boxH) * 0.16 },
+            { x: cx + boxW * 0.18, y: cy - boxH * 0.12, size: Math.min(boxW, boxH) * 0.13 },
+            { x: cx + boxW * 0.02, y: cy + boxH * 0.16, size: Math.min(boxW, boxH) * 0.12 }
+          ]
+        };
+      }
+
+      function drawHomeMotionGraphic(now) {
+        if (!homeMotionState) initHomeMotionState();
+        const state = homeMotionState;
+        const w = homeMotionCanvas.width;
+        const h = homeMotionCanvas.height;
+        const ctx2 = homeMotionCtx;
+        const cx = state.cx = w / 2;
+        const cy = state.cy = h / 2;
+        state.boxW = w * 0.72;
+        state.boxH = h * 0.58;
+        ctx2.setTransform(1, 0, 0, 1, 0, 0);
+        ctx2.clearRect(0, 0, w, h);
+        ctx2.fillStyle = 'rgba(2,8,8,0.28)';
+        ctx2.fillRect(0, 0, w, h);
+        const grad = ctx2.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.6);
+        grad.addColorStop(0, 'rgba(8, 30, 30, 0.42)');
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx2.fillStyle = grad;
+        ctx2.fillRect(0, 0, w, h);
+
+        const frameProgress = Math.min(1, (now - state.start) / 1800);
+        const frameGlow = 0.7 + Math.sin(now * 0.004) * 0.18;
+        state.framePoints.forEach((p, i) => {
+          const local = clamp((frameProgress - p.delay) / (1 - p.delay), 0, 1);
+          const ease = 1 - Math.pow(1 - local, 3);
+          p.x = lerp(p.x, p.tx, 0.05 + ease * 0.07);
+          p.y = lerp(p.y, p.ty, 0.05 + ease * 0.07);
+          const size = p.size * (1 + Math.sin(now * 0.005 + p.pulse) * 0.1);
+          ctx2.fillStyle = 'rgba(87,255,231,0.95)';
+          ctx2.shadowColor = 'rgba(87,255,231,0.95)';
+          ctx2.shadowBlur = 10 + frameGlow * 10;
+          ctx2.fillRect(p.x - size / 2, p.y - size / 2, size, size);
+        });
+        ctx2.shadowBlur = 0;
+
+        const left = cx - state.boxW / 2 + 16;
+        const right = cx + state.boxW / 2 - 16;
+        const top = cy - state.boxH / 2 + 16;
+        const bottom = cy + state.boxH / 2 - 16;
+        const cycle = ((now - state.start) % 2800) / 2800;
+        const assemblePhase = cycle < 0.54 ? cycle / 0.54 : 1;
+        const explodePhase = cycle > 0.58 ? (cycle - 0.58) / 0.42 : 0;
+
+        state.bounceBits.forEach((bit, i) => {
+          let target = null;
+          if (assemblePhase < 1) {
+            const group = i % state.miniBoxes.length;
+            const mini = state.miniBoxes[group];
+            const miniPts = generateMiniBox(mini.x, mini.y, mini.size, 18);
+            target = miniPts[i % miniPts.length];
+            bit.x = lerp(bit.x, target.x, 0.06 + assemblePhase * 0.12);
+            bit.y = lerp(bit.y, target.y, 0.06 + assemblePhase * 0.12);
+          } else {
+            if (explodePhase < 0.18 && !bit.exploded) {
+              bit.vx += rand(-1.6, 1.6);
+              bit.vy += rand(-1.4, 1.4);
+              bit.exploded = true;
+            }
+            if (explodePhase >= 0.18) bit.exploded = false;
+            bit.x += bit.vx;
+            bit.y += bit.vy;
+            if (bit.x < left || bit.x > right) bit.vx *= -1;
+            if (bit.y < top || bit.y > bottom) bit.vy *= -1;
+            bit.x = clamp(bit.x, left, right);
+            bit.y = clamp(bit.y, top, bottom);
+          }
+          const pulse = 0.85 + Math.sin(now * 0.009 + bit.phase) * 0.22;
+          const sz = bit.size * pulse;
+          ctx2.fillStyle = bit.color;
+          ctx2.shadowColor = bit.color;
+          ctx2.shadowBlur = 14;
+          ctx2.fillRect(bit.x - sz / 2, bit.y - sz / 2, sz, sz);
+        });
+        ctx2.shadowBlur = 0;
+
+        const ringAlpha = 0.24 + Math.sin(now * 0.0036) * 0.05;
+        ctx2.strokeStyle = `rgba(87,255,231,${ringAlpha})`;
+        ctx2.lineWidth = Math.max(2, w * 0.0035);
+        ctx2.strokeRect(cx - state.boxW / 2 + 4, cy - state.boxH / 2 + 4, state.boxW - 8, state.boxH - 8);
+      }
+
+      function startHomeMotionLoop() {
+        function frame(now) {
+          if (homeMotionCanvas.width && homeMotionCanvas.height) drawHomeMotionGraphic(now);
+          requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+      }
+
       function populateEffects() {
         const primary = document.getElementById("primarySelect");
         const secondary = document.getElementById("secondarySelect");
@@ -1306,6 +1700,7 @@
         previousData = null;
         ensureMapState();
         renderMapOverlay();
+        resizeHomeMotionCanvas();
       }
 
       function resizeLoader() {
@@ -1328,6 +1723,7 @@
         });
         updateEffectToggleButtons();
         updateMapButtons();
+        updateCloneButtons();
       }
 
       function updateEffectToggleButtons() {
@@ -1363,6 +1759,425 @@
         showToast(settings.normalSharp ? "Normal Camera: sharp source." : "Normal Camera: lower-bitrate source.");
       }
 
+
+      function getProjectionStatePayload() {
+        return {
+          mapEnabled: settings.mapEnabled,
+          mapShape: settings.mapShape,
+          mapMode: settings.mapMode,
+          mapFrameX: settings.mapFrameX,
+          mapFrameY: settings.mapFrameY,
+          mapFrameW: settings.mapFrameW,
+          mapFrameH: settings.mapFrameH,
+          mapContentZoom: settings.mapContentZoom,
+          mapContentX: settings.mapContentX,
+          mapContentY: settings.mapContentY,
+          mapContentScaleX: settings.mapContentScaleX,
+          mapContentScaleY: settings.mapContentScaleY,
+          customPoints: JSON.parse(JSON.stringify(mapCustomPoints || []))
+        };
+      }
+
+      function applyProjectionStatePayload(payload = null) {
+        const fallback = {
+          mapEnabled: false,
+          mapShape: "rectangle",
+          mapMode: "mask",
+          mapFrameX: 0.5,
+          mapFrameY: 0.5,
+          mapFrameW: 0.54,
+          mapFrameH: 0.54,
+          mapContentZoom: 1,
+          mapContentX: 0,
+          mapContentY: 0,
+          mapContentScaleX: 1,
+          mapContentScaleY: 1
+        };
+        const state = { ...fallback, ...(payload || {}) };
+        applyFullSettings({ ...settings, ...state }, false);
+        mapCustomPoints = Array.isArray(state.customPoints) && state.customPoints.length
+          ? JSON.parse(JSON.stringify(state.customPoints))
+          : defaultMapCustomPoints();
+        renderMapOverlay();
+      }
+
+      function updateMediaStatusText(message = "") {
+        const el = document.getElementById("mediaStatusText");
+        if (!el) return;
+        if (message) {
+          el.textContent = message;
+          return;
+        }
+        const slot = mediaSlots[activeMediaSlot];
+        if (activeSourceMode === "camera") {
+          el.textContent = "Camera is active. Load photos, videos, or looping GIFs into the piano slots, then switch to a slot and map it.";
+        } else if (activeSourceMode === "clone") {
+          el.textContent = `Camera clone ${activeCloneSlot + 1} is active for editing.`;
+        } else if (slot) {
+          el.textContent = `Slot ${activeMediaSlot + 1}: ${slot.name} (${slot.type}).`;
+        } else {
+          el.textContent = `Slot ${activeMediaSlot + 1} is empty. Load a photo, video, or GIF to cast it.`;
+        }
+      }
+
+      function updateMediaSlotButtons() {
+        document.querySelectorAll(".slotButton[data-slot]").forEach(button => {
+          const index = Number(button.dataset.slot);
+          const slot = mediaSlots[index];
+          button.classList.toggle("loaded", !!slot || (activeSourceMode === "camera" && index === 0));
+          button.classList.toggle("active", activeSourceMode === "slot" ? activeMediaSlot === index : index === 0);
+          button.title = slot ? `${index + 1}: ${slot.name}` : `${index + 1}: empty slot`;
+          button.textContent = String(index + 1);
+        });
+        updateMediaStatusText();
+      }
+
+      function updateCloneButtons() {
+        const cloneStatus = document.getElementById("cloneStatusText");
+        document.querySelectorAll(".cloneSlotButton[data-clone-slot]").forEach(button => {
+          const index = Number(button.dataset.cloneSlot);
+          const slot = cameraCloneSlots[index];
+          button.classList.toggle("active", activeSourceMode === "clone" && activeCloneSlot === index);
+          button.textContent = `Frame ${index + 1}`;
+          const sourceLabel = !slot ? 'empty' : (slot.sourceType === 'slot' ? `media ${slot.sourceIndex + 1}` : 'camera');
+          button.title = slot ? `Mapped frame ${index + 1} using ${sourceLabel}` : `Empty frame slot ${index + 1}`;
+          button.style.opacity = slot ? '1' : '0.66';
+        });
+        if (!cloneStatus) return;
+        if (activeSourceMode === 'clone' && cameraCloneSlots[activeCloneSlot]) {
+          const slot = cameraCloneSlots[activeCloneSlot];
+          const sourceLabel = slot.sourceType === 'slot' ? `media slot ${slot.sourceIndex + 1}` : 'live camera';
+          cloneStatus.textContent = `Editing mapped frame ${activeCloneSlot + 1} (${sourceLabel}). Use pinch or Z + +/- to zoom, V + arrows to pan, X + arrows to squish.`;
+        } else {
+          const active = cameraCloneSlots.filter(Boolean);
+          cloneStatus.textContent = active.length
+            ? `${active.length} mapped frame${active.length === 1 ? '' : 's'} active. Use Swap Frames to rotate their sources while preserving each frame's dimensions.`
+            : 'Add up to four mapped frames, then assign them live camera or uploaded media and edit each one separately.';
+        }
+      }
+
+      function getDefaultCloneProjection(index = 0) {
+        const seed = getProjectionStatePayload();
+        const offsets = [0.24, 0.44, 0.64, 0.82];
+        return {
+          ...seed,
+          mapEnabled: true,
+          mapShape: seed.mapShape || 'rectangle',
+          mapMode: seed.mapMode || 'mask',
+          mapFrameX: offsets[index] || 0.5,
+          mapFrameY: 0.34 + (index % 2) * 0.24,
+          mapFrameW: 0.24,
+          mapFrameH: 0.24,
+          mapContentZoom: 1,
+          mapContentX: 0,
+          mapContentY: 0,
+          mapContentScaleX: 1,
+          mapContentScaleY: 1,
+          customPoints: JSON.parse(JSON.stringify(defaultMapCustomPoints()))
+        };
+      }
+
+      function getCurrentEditableSourceDescriptor() {
+        if (activeSourceMode === 'slot') return { sourceType: 'slot', sourceIndex: activeMediaSlot };
+        if (activeSourceMode === 'clone' && cameraCloneSlots[activeCloneSlot]) {
+          return {
+            sourceType: cameraCloneSlots[activeCloneSlot].sourceType || 'camera',
+            sourceIndex: cameraCloneSlots[activeCloneSlot].sourceIndex ?? null
+          };
+        }
+        return { sourceType: 'camera', sourceIndex: null };
+      }
+
+      function addCameraClone() {
+        const next = cameraCloneSlots.findIndex(slot => !slot);
+        const index = next === -1 ? 0 : next;
+        const descriptor = getCurrentEditableSourceDescriptor();
+        saveCurrentProjectionToActiveSource();
+        cameraCloneSlots[index] = {
+          name: `Mapped Frame ${index + 1}`,
+          sourceType: descriptor.sourceType,
+          sourceIndex: descriptor.sourceIndex,
+          projectionState: getDefaultCloneProjection(index)
+        };
+        activateCameraClone(index);
+      }
+
+      function activateCameraClone(index) {
+        if (!cameraCloneSlots[index]) {
+          const descriptor = getCurrentEditableSourceDescriptor();
+          cameraCloneSlots[index] = {
+            name: `Mapped Frame ${index + 1}`,
+            sourceType: descriptor.sourceType,
+            sourceIndex: descriptor.sourceIndex,
+            projectionState: getDefaultCloneProjection(index)
+          };
+        }
+        saveCurrentProjectionToActiveSource();
+        activeSourceMode = 'clone';
+        activeCloneSlot = index;
+        clearHiddenMediaElements();
+        applyProjectionStatePayload(cameraCloneSlots[index].projectionState || getDefaultCloneProjection(index));
+        updateMediaSlotButtons();
+        updateCloneButtons();
+        showToast(`Editing mapped frame ${index + 1}.`);
+      }
+
+      function swapMappedFrameSources() {
+        const activeFrames = cameraCloneSlots
+          .map((slot, index) => ({ slot, index }))
+          .filter(entry => entry.slot && entry.slot.projectionState && entry.slot.projectionState.mapEnabled !== false);
+        if (activeFrames.length < 2) {
+          showToast('Need at least two mapped frames to swap.');
+          return;
+        }
+        const descriptors = activeFrames.map(entry => ({
+          sourceType: entry.slot.sourceType || 'camera',
+          sourceIndex: entry.slot.sourceIndex ?? null
+        }));
+        descriptors.unshift(descriptors.pop());
+        activeFrames.forEach((entry, i) => {
+          entry.slot.sourceType = descriptors[i].sourceType;
+          entry.slot.sourceIndex = descriptors[i].sourceIndex;
+        });
+        if (activeSourceMode === 'clone' && cameraCloneSlots[activeCloneSlot]) {
+          applyProjectionStatePayload(cameraCloneSlots[activeCloneSlot].projectionState || getDefaultCloneProjection(activeCloneSlot));
+        }
+        updateCloneButtons();
+        showToast('Mapped frame sources swapped. Dimensions preserved.');
+      }
+
+      function clearSelectedClone() {
+        if (!cameraCloneSlots[activeCloneSlot]) {
+          showToast('No clone selected.');
+          return;
+        }
+        cameraCloneSlots[activeCloneSlot] = null;
+        activeSourceMode = 'camera';
+        applyProjectionStatePayload(cameraProjectionState || null);
+        updateCloneButtons();
+        updateMediaSlotButtons();
+        renderMapOverlay();
+        showToast('Selected camera clone cleared.');
+      }
+
+      function useBaseSourceForEditing() {
+        if (activeSourceMode === 'clone' && cameraCloneSlots[activeCloneSlot]?.sourceType === 'slot') {
+          activateMediaSlot(cameraCloneSlots[activeCloneSlot].sourceIndex || 0);
+        } else if (activeSourceMode === 'slot') {
+          activateMediaSlot(activeMediaSlot);
+        } else {
+          useCameraSource();
+        }
+        updateCloneButtons();
+      }
+
+      function saveCurrentProjectionToActiveSource() {
+        if (activeSourceMode === "camera") {
+          cameraProjectionState = getProjectionStatePayload();
+        } else if (activeSourceMode === "clone") {
+          if (!cameraCloneSlots[activeCloneSlot]) cameraCloneSlots[activeCloneSlot] = { name: `Camera Clone ${activeCloneSlot + 1}`, projectionState: null };
+          cameraCloneSlots[activeCloneSlot].projectionState = getProjectionStatePayload();
+        } else if (mediaSlots[activeMediaSlot]) {
+          mediaSlots[activeMediaSlot].projectionState = getProjectionStatePayload();
+        }
+      }
+
+      function clearHiddenMediaElements() {
+        mediaVideo.pause();
+        mediaVideo.removeAttribute("src");
+        mediaVideo.load();
+        mediaImage.removeAttribute("src");
+      }
+
+      function isGifFile(file) {
+        return file && (file.type === "image/gif" || /\.gif$/i.test(file.name || ""));
+      }
+
+      function getSlotMediaElement(slotIndex) {
+        const slot = mediaSlots[slotIndex];
+        if (!slot) return null;
+        const el = slot.element || null;
+        if (!el) return null;
+        if (slot.type === "video" && el.readyState >= 2) return el;
+        if ((slot.type === "image" || slot.type === "gif") && el.complete && el.naturalWidth > 0) return el;
+        return null;
+      }
+
+      function getCloneSourceElement(cloneSlot) {
+        if (!cloneSlot) return null;
+        if (cloneSlot.sourceType === 'slot') return getSlotMediaElement(cloneSlot.sourceIndex);
+        if (!demoMode && video.readyState >= 2) return video;
+        return null;
+      }
+
+      function getActiveSourceElement() {
+        if (activeSourceMode === "slot") {
+          return getSlotMediaElement(activeMediaSlot);
+        }
+        if (activeSourceMode === "clone") {
+          return getCloneSourceElement(cameraCloneSlots[activeCloneSlot]);
+        }
+        if (!demoMode && video.readyState >= 2) return video;
+        return null;
+      }
+
+      function useCameraSource(showMessage = true) {
+        saveCurrentProjectionToActiveSource();
+        activeSourceMode = "camera";
+        activeMediaSlot = 0;
+        activeCloneSlot = 0;
+        cameraCloneSlots = Array.from({ length: 4 }, () => null);
+        clearHiddenMediaElements();
+        if (cameraProjectionState) applyProjectionStatePayload(cameraProjectionState);
+        else applyProjectionStatePayload();
+        updateMediaSlotButtons();
+        updateCloneButtons();
+        if (showMessage) showToast("Camera source active.");
+      }
+
+      async function activateMediaSlot(index) {
+        activeMediaSlot = index;
+        saveCurrentProjectionToActiveSource();
+        const slot = mediaSlots[index];
+        if (!slot) {
+          activeSourceMode = "slot";
+          clearHiddenMediaElements();
+          applyProjectionStatePayload();
+          updateMediaSlotButtons();
+          updateCloneButtons();
+          showToast(`Slot ${index + 1} is empty.`);
+          return;
+        }
+        activeSourceMode = "slot";
+        clearHiddenMediaElements();
+        if (slot.type === "video" && slot.element) {
+          try { slot.element.currentTime = 0; } catch (error) {}
+          try { await slot.element.play(); } catch (error) {}
+        }
+        applyProjectionStatePayload(slot.projectionState || null);
+        updateMediaSlotButtons();
+        updateCloneButtons();
+        showToast(`Loaded slot ${index + 1}: ${slot.name}`);
+      }
+
+      function handleMediaUpload(fileList) {
+        const files = Array.from(fileList || []).slice(0, mediaSlots.length);
+        if (!files.length) return;
+        files.forEach((file, index) => {
+          if (mediaSlots[index]?.url) URL.revokeObjectURL(mediaSlots[index].url);
+          const type = file.type.startsWith("video/") ? "video" : (isGifFile(file) ? "gif" : "image");
+          const url = URL.createObjectURL(file);
+          let element;
+          if (type === "video") {
+            element = document.createElement("video");
+            element.src = url;
+            element.loop = true;
+            element.muted = true;
+            element.playsInline = true;
+            element.preload = "auto";
+            element.autoplay = true;
+            element.play().catch(() => {});
+          } else {
+            element = new Image();
+            element.decoding = "sync";
+            element.loading = "eager";
+            element.src = url;
+            if (type === "gif") {
+              element.onload = () => updateMediaStatusText(`GIF slot ${index + 1} ready: ${file.name}. It will loop as an animated image source.`);
+            }
+          }
+          mediaSlots[index] = {
+            name: file.name,
+            type,
+            url,
+            element,
+            projectionState: index === 0 ? getProjectionStatePayload() : null
+          };
+        });
+        updateMediaSlotButtons();
+        const firstLoaded = files.length ? 0 : activeMediaSlot;
+        activateMediaSlot(firstLoaded);
+      }
+
+      function toggleActiveMediaPlayback() {
+        if (activeSourceMode === "slot" && mediaSlots[activeMediaSlot]?.type === "gif") {
+          showToast("GIF slots loop automatically.");
+          return;
+        }
+        if (activeSourceMode !== "slot" || !mediaSlots[activeMediaSlot] || mediaSlots[activeMediaSlot].type !== "video") {
+          showToast("Active slot is not a playable video. GIFs loop automatically.");
+          return;
+        }
+        const mediaEl = mediaSlots[activeMediaSlot].element;
+        if (!mediaEl) return;
+        if (mediaEl.paused) {
+          mediaEl.play().catch(() => {});
+          showToast("Slot playback running.");
+        } else {
+          mediaEl.pause();
+          showToast("Slot playback paused.");
+        }
+      }
+
+      async function toggleTrueFullscreen() {
+        try {
+          if (!document.fullscreenElement) {
+            const root = document.documentElement;
+            if (root.requestFullscreen) await root.requestFullscreen();
+            setMasterUIHidden(true);
+            showToast("Fullscreen visual mode requested.");
+          } else {
+            await document.exitFullscreen();
+            setMasterUIHidden(false);
+            showToast("Exited fullscreen.");
+          }
+        } catch (error) {
+          setMasterUIHidden(true);
+          showToast("Fullscreen request not fully supported on this browser.");
+        }
+      }
+
+      function normalizeToDefaultCameraView() {
+        keyboardMapMode = false;
+        keyboardMapCropHeld = false;
+        keyboardMapPanHeld = false;
+        keyboardMapSquishHeld = false;
+        keyboardZoomHeld = false;
+        cheatSheet.classList.add("hidden");
+        mapEditorVisible = false;
+        mapCanvas.classList.remove("editing");
+        mapCustomPoints = defaultMapCustomPoints();
+        activeSourceMode = "camera";
+        activeMediaSlot = 0;
+        clearHiddenMediaElements();
+        applyFullSettings({
+          ...settings,
+          ...defaultSettings,
+          primaryEnabled: false,
+          secondaryEnabled: false,
+          mapEnabled: false,
+          mapShape: "rectangle",
+          mapMode: "mask",
+          mapFrameX: 0.5,
+          mapFrameY: 0.5,
+          mapFrameW: 0.54,
+          mapFrameH: 0.54,
+          mapContentZoom: 1,
+          mapContentX: 0,
+          mapContentY: 0,
+          mapContentScaleX: 1,
+          mapContentScaleY: 1
+        }, false);
+        updateMediaSlotButtons();
+        updateCloneButtons();
+        controlDock.classList.remove("hidden", "collapsed");
+        topBar.classList.remove("hidden");
+        cornerHint.classList.remove("hidden");
+        setMasterUIHidden(false);
+        showPanel("visualPanel");
+        renderMapOverlay();
+        showToast("Returned to smooth normal camera mode.");
+      }
 
       function defaultMapCustomPoints() {
         return [
@@ -1622,6 +2437,8 @@
       function formatValue(key, value) {
         if (key === "fps") return `${Math.round(value)}`;
         if (key === "exportBitrate") return `${value.toFixed(1)}M`;
+        if (key === "mapContentX" || key === "mapContentY") return `${value >= 0 ? "+" : ""}${value.toFixed(2)}`;
+        if (key === "mapContentZoom" || key === "mapContentScaleX" || key === "mapContentScaleY") return `${value.toFixed(2)}x`;
         return `${Math.round(value * 100)}%`;
       }
 
@@ -1635,6 +2452,7 @@
           redoStack.length = 0;
         }
         updateControlsFromSettings();
+        updateMediaSlotButtons();
       }
 
       function applyFullSettings(next, pushHistory = true) {
@@ -1771,6 +2589,8 @@
         document.getElementById("normalQualityButton").addEventListener("click", toggleNormalQuality);
         document.getElementById("keysButton").addEventListener("click", () => cheatSheet.classList.toggle("hidden"));
         document.getElementById("mapButton").addEventListener("click", activateMapPanel);
+        document.getElementById("fullButton").addEventListener("click", toggleTrueFullscreen);
+        document.getElementById("resetNormalButton").addEventListener("click", normalizeToDefaultCameraView);
         document.getElementById("hideUIButton").addEventListener("click", toggleMasterUI);
         masterHideButton.addEventListener("click", toggleMasterUI);
         document.getElementById("homeBugButton").addEventListener("click", reportBug);
@@ -1785,6 +2605,19 @@
         document.getElementById("shapeCustomButton").addEventListener("click", () => setMapShape("custom"));
         document.getElementById("mapModeMaskButton").addEventListener("click", () => setMapMode("mask"));
         document.getElementById("mapModeWarpButton").addEventListener("click", () => setMapMode("warp"));
+        document.getElementById("mapZoomOutButton").addEventListener("click", () => adjustMapContentZoom(-0.08));
+        document.getElementById("mapZoomInButton").addEventListener("click", () => adjustMapContentZoom(0.08));
+        document.getElementById("mapContentResetButton").addEventListener("click", resetMapContentTransform);
+        document.getElementById("mediaLoadButton").addEventListener("click", () => document.getElementById("mediaUpload").click());
+        document.getElementById("mediaCameraButton").addEventListener("click", () => useCameraSource());
+        document.getElementById("mediaPlayPauseButton").addEventListener("click", toggleActiveMediaPlayback);
+        document.getElementById("addCloneButton").addEventListener("click", addCameraClone);
+        document.getElementById("useCloneBaseButton").addEventListener("click", useBaseSourceForEditing);
+        document.getElementById("swapFramesButton").addEventListener("click", swapMappedFrameSources);
+        document.getElementById("clearCloneButton").addEventListener("click", clearSelectedClone);
+        document.getElementById("mediaUpload").addEventListener("change", event => handleMediaUpload(event.target.files));
+        document.querySelectorAll(".slotButton[data-slot]").forEach(button => button.addEventListener("click", () => activateMediaSlot(Number(button.dataset.slot))));
+        document.querySelectorAll(".cloneSlotButton[data-clone-slot]").forEach(button => button.addEventListener("click", () => activateCameraClone(Number(button.dataset.cloneSlot))));
         document.getElementById("randomizeButton").addEventListener("click", randomizeSettings);
         document.getElementById("recordButton").addEventListener("click", toggleRecording);
         document.getElementById("snapshotButton").addEventListener("click", saveSnapshot);
@@ -1799,6 +2632,7 @@
         document.getElementById("startButton").addEventListener("click", () => startRealMedia(false));
         document.getElementById("demoButton").addEventListener("click", startDemo);
         document.getElementById("loaderPreviewButton").addEventListener("click", () => playLoader(() => {}));
+        updateCloneButtons();
       }
 
       function showPanel(panelId) {
@@ -2003,20 +2837,21 @@
 
         sourceCtx.save();
         sourceCtx.clearRect(0, 0, sw, sh);
-        if (!demoMode && video.readyState >= 2 && video.videoWidth) {
-          const vw = video.videoWidth;
-          const vh = video.videoHeight;
-          const videoRatio = vw / vh;
+        const activeSource = getActiveSourceElement();
+        if (activeSource) {
+          const vw = activeSource.videoWidth || activeSource.naturalWidth || sw;
+          const vh = activeSource.videoHeight || activeSource.naturalHeight || sh;
+          const sourceRatio = vw / vh;
           const canvasRatio = sw / sh;
           let sx = 0, sy = 0, sWidth = vw, sHeight = vh;
-          if (videoRatio > canvasRatio) {
+          if (sourceRatio > canvasRatio) {
             sWidth = vh * canvasRatio;
             sx = (vw - sWidth) / 2;
           } else {
             sHeight = vw / canvasRatio;
             sy = (vh - sHeight) / 2;
           }
-          sourceCtx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, sw, sh);
+          sourceCtx.drawImage(activeSource, sx, sy, sWidth, sHeight, 0, 0, sw, sh);
         } else {
           drawDemoSource(sourceCtx, sw, sh, now);
         }
@@ -2087,9 +2922,103 @@
           drawVignette(frame);
         }
         if (settings.mapEnabled) applyMapTransform();
+        renderCameraCloneLayers();
         renderMapOverlay();
       }
 
+
+      function getProjectionBBoxPixelsForState(state) {
+        const cw = canvas.width;
+        const ch = canvas.height;
+        const cx = clamp(Number(state.mapFrameX || 0.5), 0.05, 0.95) * cw;
+        const cy = clamp(Number(state.mapFrameY || 0.5), 0.05, 0.95) * ch;
+        const w = clamp(Number(state.mapFrameW || 0.54), 0.08, 1) * cw;
+        const h = clamp(Number(state.mapFrameH || 0.54), 0.08, 1) * ch;
+        return { x: cx - w / 2, y: cy - h / 2, w, h, cx, cy };
+      }
+
+      function getProjectionPointsPixelsForState(state) {
+        const box = getProjectionBBoxPixelsForState(state);
+        const customPoints = Array.isArray(state.customPoints) ? state.customPoints : [];
+        if (state.mapShape === 'custom' && customPoints.length) {
+          return customPoints.map(point => ({ x: point.x * canvas.width, y: point.y * canvas.height, fixed: !!point.fixed }));
+        }
+        if (state.mapShape === 'circle') {
+          return [
+            { x: box.x, y: box.y },
+            { x: box.x + box.w, y: box.y },
+            { x: box.x + box.w, y: box.y + box.h },
+            { x: box.x, y: box.y + box.h }
+          ];
+        }
+        if (state.mapShape === 'triangle') {
+          return [
+            { x: box.cx, y: box.y },
+            { x: box.x + box.w, y: box.y + box.h },
+            { x: box.x, y: box.y + box.h }
+          ];
+        }
+        if (state.mapShape === 'diamond') {
+          return [
+            { x: box.cx, y: box.y },
+            { x: box.x + box.w, y: box.cy },
+            { x: box.cx, y: box.y + box.h },
+            { x: box.x, y: box.cy }
+          ];
+        }
+        return [
+          { x: box.x, y: box.y },
+          { x: box.x + box.w, y: box.y },
+          { x: box.x + box.w, y: box.y + box.h },
+          { x: box.x, y: box.y + box.h }
+        ];
+      }
+
+      function buildProjectionPath(context, state, points = getProjectionPointsPixelsForState(state)) {
+        context.beginPath();
+        if (state.mapShape === 'circle') {
+          const box = getProjectionBBoxPixelsForState(state);
+          context.ellipse(box.cx, box.cy, box.w / 2, box.h / 2, 0, 0, Math.PI * 2);
+          return;
+        }
+        if (!points.length) return;
+        context.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) context.lineTo(points[i].x, points[i].y);
+        context.closePath();
+      }
+
+      function renderProjectionInstance(source, state, clearCanvas = false) {
+        if (!source || !state || !state.mapEnabled) return;
+        const points = getProjectionPointsPixelsForState(state);
+        const box = getProjectionBBoxPixelsForState(state);
+        const zoom = clamp(Number(state.mapContentZoom || 1), 0.25, 4);
+        const scaleX = clamp(Number(state.mapContentScaleX || 1), 0.25, 3);
+        const scaleY = clamp(Number(state.mapContentScaleY || 1), 0.25, 3);
+        const panX = clamp(Number(state.mapContentX || 0), -1, 1);
+        const panY = clamp(Number(state.mapContentY || 0), -1, 1);
+        const dest = state.mapMode === 'warp'
+          ? { x: box.x, y: box.y, w: box.w, h: box.h }
+          : { x: 0, y: 0, w: canvas.width, h: canvas.height };
+        const drawW = dest.w * zoom * scaleX;
+        const drawH = dest.h * zoom * scaleY;
+        const drawX = dest.x + (dest.w - drawW) / 2 + panX * dest.w * 0.5;
+        const drawY = dest.y + (dest.h - drawH) / 2 + panY * dest.h * 0.5;
+        if (clearCanvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        buildProjectionPath(ctx, state, points);
+        ctx.clip();
+        ctx.drawImage(source, drawX, drawY, drawW, drawH);
+        ctx.restore();
+      }
+
+      function renderCameraCloneLayers() {
+        cameraCloneSlots.forEach(slot => {
+          if (!slot || !slot.projectionState || !slot.projectionState.mapEnabled) return;
+          const sourceEl = getCloneSourceElement(slot);
+          if (!sourceEl) return;
+          renderProjectionInstance(sourceEl, slot.projectionState, false);
+        });
+      }
 
       function applyMapTransform() {
         scratchCanvas.width = canvas.width;
@@ -2097,19 +3026,8 @@
         scratchCtx.setTransform(1, 0, 0, 1, 0, 0);
         scratchCtx.clearRect(0, 0, scratchCanvas.width, scratchCanvas.height);
         scratchCtx.drawImage(canvas, 0, 0);
-        const points = getMapPointsPixels();
-        const box = getMapBBoxPixels();
         ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.save();
-        buildMapPath(ctx, points);
-        ctx.clip();
-        if (settings.mapMode === 'warp') {
-          ctx.drawImage(scratchCanvas, 0, 0, scratchCanvas.width, scratchCanvas.height, box.x, box.y, box.w, box.h);
-        } else {
-          ctx.drawImage(scratchCanvas, 0, 0);
-        }
-        ctx.restore();
+        renderProjectionInstance(scratchCanvas, { ...getProjectionStatePayload(), customPoints: JSON.parse(JSON.stringify(mapCustomPoints || [])) }, true);
       }
 
       function getMapHandlePoints() {
@@ -2154,6 +3072,29 @@
         const point = handles[index];
         dragMapHandle(index, { x: point.x + dx, y: point.y + dy });
         renderMapOverlay();
+      }
+
+      function adjustMapContentZoom(delta) {
+        applySetting("mapContentZoom", clamp(Number(settings.mapContentZoom || 1) + delta, 0.25, 4), false);
+      }
+
+      function panMapContent(dx, dy) {
+        applySetting("mapContentX", clamp(Number(settings.mapContentX || 0) + dx, -1, 1), false);
+        applySetting("mapContentY", clamp(Number(settings.mapContentY || 0) + dy, -1, 1), false);
+      }
+
+      function squishMapContent(dx, dy) {
+        applySetting("mapContentScaleX", clamp(Number(settings.mapContentScaleX || 1) + dx, 0.25, 3), false);
+        applySetting("mapContentScaleY", clamp(Number(settings.mapContentScaleY || 1) + dy, 0.25, 3), false);
+      }
+
+      function resetMapContentTransform() {
+        applySetting("mapContentZoom", 1, false);
+        applySetting("mapContentX", 0, false);
+        applySetting("mapContentY", 0, false);
+        applySetting("mapContentScaleX", 1, false);
+        applySetting("mapContentScaleY", 1, false);
+        showToast("Map source fit reset.");
       }
 
       function renderMapOverlay() {
@@ -2221,6 +3162,13 @@
         mapCanvas.addEventListener('pointerdown', event => {
           if (!mapEditorVisible) return;
           const point = getEventCanvasPoint(event);
+          mapPointerCache.set(event.pointerId, point);
+          if (mapPointerCache.size === 2) {
+            const pts = Array.from(mapPointerCache.values());
+            mapPinch = { distance: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1, zoom: Number(settings.mapContentZoom || 1) };
+            mapDrag = null;
+            return;
+          }
           const hit = findNearestMapPoint(point);
           mapDrag = {
             pointerId: event.pointerId,
@@ -2246,8 +3194,18 @@
         });
 
         mapCanvas.addEventListener('pointermove', event => {
-          if (!mapEditorVisible || !mapDrag || mapDrag.pointerId !== event.pointerId) return;
+          if (!mapEditorVisible) return;
           const point = getEventCanvasPoint(event);
+          if (mapPointerCache.has(event.pointerId)) mapPointerCache.set(event.pointerId, point);
+          if (mapPinch && mapPointerCache.size >= 2) {
+            const pts = Array.from(mapPointerCache.values());
+            const nextDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+            settings.mapContentZoom = clamp(mapPinch.zoom * (nextDistance / mapPinch.distance), 0.25, 4);
+            updateControlsFromSettings();
+            renderMapOverlay();
+            return;
+          }
+          if (!mapDrag || mapDrag.pointerId !== event.pointerId) return;
           const dx = point.x - mapDrag.start.x;
           const dy = point.y - mapDrag.start.y;
           if (Math.abs(dx) > 2 || Math.abs(dy) > 2) mapDrag.moved = true;
@@ -2262,6 +3220,8 @@
         });
 
         function finishPointer(event) {
+          mapPointerCache.delete(event.pointerId);
+          if (mapPointerCache.size < 2) mapPinch = null;
           if (!mapDrag || mapDrag.pointerId !== event.pointerId) return;
           const point = getEventCanvasPoint(event);
           if (mapDrag.mode === 'point' && !mapDrag.moved && settings.mapShape === 'custom' && mapDrag.index >= 4) {
@@ -2277,6 +3237,10 @@
 
         mapCanvas.addEventListener('pointerup', finishPointer);
         mapCanvas.addEventListener('pointercancel', finishPointer);
+        mapCanvas.addEventListener('pointerleave', event => {
+          mapPointerCache.delete(event.pointerId);
+          if (mapPointerCache.size < 2) mapPinch = null;
+        });
       }
 
       function drawBackgroundFade(frame) {
@@ -2792,6 +3756,7 @@
           if (isTyping && !event.ctrlKey && !event.metaKey) return;
 
           const key = event.key.toLowerCase();
+          const rawKey = event.key;
 
           if ((event.ctrlKey || event.metaKey) && key === "c") {
             event.preventDefault();
@@ -2826,6 +3791,50 @@
             return;
           }
 
+          if (keyboardMapMode && key === 'v' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            keyboardMapPanHeld = true;
+            event.preventDefault();
+            return;
+          }
+
+          if (keyboardMapMode && key === 'x' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            keyboardMapSquishHeld = true;
+            event.preventDefault();
+            return;
+          }
+
+          if (keyboardMapMode && key === 'z' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            keyboardZoomHeld = true;
+            event.preventDefault();
+            return;
+          }
+
+          if (keyboardMapMode && keyboardZoomHeld && (rawKey === '+' || rawKey === '=' || rawKey === '-' || rawKey === '_')) {
+            event.preventDefault();
+            adjustMapContentZoom((rawKey === '-' || rawKey === '_') ? -0.08 : 0.08);
+            return;
+          }
+
+          if (keyboardMapMode && key === 'tab') {
+            event.preventDefault();
+            const available = cameraCloneSlots.map((slot, i) => slot ? i : null).filter(v => v !== null);
+            if (!available.length) {
+              showToast('No mapped frames available.');
+              return;
+            }
+            let currentIndex = available.indexOf(activeSourceMode === 'clone' ? activeCloneSlot : available[0]);
+            if (currentIndex === -1) currentIndex = 0;
+            currentIndex = (currentIndex + (event.shiftKey ? -1 : 1) + available.length) % available.length;
+            activateCameraClone(available[currentIndex]);
+            return;
+          }
+
+          if (keyboardMapMode && key === 't' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            event.preventDefault();
+            swapMappedFrameSources();
+            return;
+          }
+
           const number = /^\d$/.test(event.key) ? Number(event.key) : null;
           if (number !== null) {
             event.preventDefault();
@@ -2841,14 +3850,29 @@
 
           if (keyboardMapMode && ["arrowup", "arrowright", "arrowdown", "arrowleft"].includes(key)) {
             event.preventDefault();
+            const step = event.shiftKey ? 10 : 4;
             if (keyboardMapCropHeld) {
-              const step = event.shiftKey ? 10 : 4;
               let dx = 0, dy = 0;
               if (key === 'arrowleft') dx = -step;
               if (key === 'arrowright') dx = step;
               if (key === 'arrowup') dy = -step;
               if (key === 'arrowdown') dy = step;
               nudgeKeyboardMapPoint(dx, dy);
+            } else if (keyboardMapPanHeld) {
+              let dx = 0, dy = 0;
+              if (key === 'arrowleft') dx = -0.02 * (event.shiftKey ? 2 : 1);
+              if (key === 'arrowright') dx = 0.02 * (event.shiftKey ? 2 : 1);
+              if (key === 'arrowup') dy = -0.02 * (event.shiftKey ? 2 : 1);
+              if (key === 'arrowdown') dy = 0.02 * (event.shiftKey ? 2 : 1);
+              panMapContent(dx, dy);
+            } else if (keyboardMapSquishHeld) {
+              let sx = 0, sy = 0;
+              const amount = 0.035 * (event.shiftKey ? 2 : 1);
+              if (key === 'arrowleft') sx = -amount;
+              if (key === 'arrowright') sx = amount;
+              if (key === 'arrowup') sy = amount;
+              if (key === 'arrowdown') sy = -amount;
+              squishMapContent(sx, sy);
             } else {
               const direction = (key === 'arrowright' || key === 'arrowdown') ? 1 : -1;
               moveKeyboardMapSelection(direction);
@@ -2878,6 +3902,7 @@
             case "k": cheatSheet.classList.toggle("hidden"); event.preventDefault(); break;
             case "u": toggleMasterUI(); event.preventDefault(); break;
             case "e": showPanel("effectsPanel"); event.preventDefault(); break;
+            case "f": toggleTrueFullscreen(); event.preventDefault(); break;
             case "v": showPanel("visualPanel"); event.preventDefault(); break;
             case "x": showPanel("exportPanel"); event.preventDefault(); break;
             case "c": showPanel("cameraPanel"); event.preventDefault(); break;
@@ -2899,6 +3924,9 @@
           const key = event.key.toLowerCase();
           clearActiveShortcut(key);
           if (key === 'd') keyboardMapCropHeld = false;
+          if (key === 'v') keyboardMapPanHeld = false;
+          if (key === 'x') keyboardMapSquishHeld = false;
+          if (key === 'z') keyboardZoomHeld = false;
         });
       }
 
@@ -2956,7 +3984,7 @@
         loaderScreen.classList.remove("hidden");
         resizeLoader();
         const targets = generateLoaderTargets();
-        const duration = 2700;
+        const duration = 3700;
         const start = performance.now();
         const text = document.getElementById("loaderText");
 
@@ -3005,6 +4033,7 @@
         setupControls();
         setupKeyboard();
         setupMapInteractions();
+        startHomeMotionLoop();
         window.addEventListener("resize", () => {
           resizeCanvas();
           resizeLoader();
