@@ -1353,7 +1353,7 @@
             <div class="guideGrid">
               <div class="guideChip"><strong>Home</strong>Animated intro page. Use UI Color to recolor the app, Start to open this guide, Replay Loader to preview the loading screen, and Report a Bug to email a bug report.</div>
               <div class="guideChip"><strong>Help</strong>Opens this guide again from inside the app so users can review the workflow without leaving the project.</div>
-              <div class="guideChip"><strong>Full</strong>Requests fullscreen and reduces the interface for projection use.</div><div class="guideChip"><strong>Camera devices</strong>Use Find Cameras, Use Camera, and Assign to Frame to choose front, wide, zoom, or other available device cameras.</div>
+              <div class="guideChip"><strong>Full</strong>Requests fullscreen and reduces the interface for projection use.</div><div class="guideChip"><strong>Camera devices</strong>Use Find Cameras, Use Camera, Assign to Frame, or <strong>Shift + C</strong> to choose front, wide, zoom, or other available device cameras.</div>
               <div class="guideChip"><strong>Normal</strong>Resets the active view back to a smooth normal camera feed with effects off and a clean default state.</div>
             </div>
           </div>
@@ -1385,7 +1385,7 @@
             <ul>
               <li>Upload photos, videos, and GIFs into the piano-style media slots.</li>
               <li>GIFs loop automatically and are held until loaded so black placeholder frames are less likely to appear.</li>
-              <li><strong>Add Source Frame</strong> duplicates the currently active live source or media source into another mapped frame.</li><li><strong>Assign to Frame</strong> in the Camera panel lets a selected mapped frame use a specific device camera, such as front, wide, or zoom, when the browser exposes those cameras.</li>
+              <li><strong>Add Source Frame</strong> duplicates the currently active live source or media source into another mapped frame.</li><li><strong>Assign to Frame</strong> in the Camera panel lets a selected mapped frame use a specific device camera, such as front, wide, or zoom, when the browser exposes those cameras. <strong>Shift + C</strong> cycles through the available cameras one at a time.</li>
               <li><strong>Frame 1–4</strong> buttons select which mapped frame you are editing.</li><li><strong>Frame visuals</strong> lets each mapped frame use its own primary and secondary visual modes. Use this selectively for performance when running several frames at once.</li>
               <li><strong>Swap Frames</strong> rotates the assigned sources between active mapped frames while preserving each frame’s dimensions and shape.</li>
             </ul>
@@ -1722,6 +1722,7 @@
         <div class="keyCombo cat-effects"><kbd>Shift</kbd> + <kbd>B</kbd></div><div>Randomize the look.</div>
 
         <div class="keyGroup cat-camera">Live controls + sliders</div>
+        <div class="keyCombo cat-camera"><kbd>Shift</kbd> + <kbd>C</kbd></div><div>Cycle through available device cameras one at a time. If a mapped frame is selected, assigns the next camera to that frame; otherwise switches the main camera feed.</div>
         <div class="keyCombo cat-camera"><kbd>Q</kbd>/<kbd>W</kbd></div><div>Primary / secondary mix.</div>
         <div class="keyCombo cat-camera"><kbd>I</kbd>/<kbd>M</kbd></div><div>Intensity / mic sensitivity.</div>
         <div class="keyCombo cat-camera"><kbd>G</kbd>/<kbd>T</kbd></div><div>Glow / texture.</div>
@@ -1758,6 +1759,7 @@
         <div class="keyCombo cat-capture"><kbd>S</kbd></div><div>Save a PNG snapshot.</div>
 
         <div class="keyGroup cat-system">System + clipboard</div>
+        <div class="keyCombo cat-system"><kbd>Tap screen</kbd></div><div>If a Bluetooth keyboard ever feels inactive after using a dropdown, tap the visual area once. This build also auto-releases control focus after interactions.</div>
         <div class="keyCombo cat-system"><kbd>Space</kbd></div><div>Pause / resume the visual engine.</div>
         <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>C</kbd></div><div>Copy the selected mapped frame when map editing is active; otherwise copy the current preset JSON.</div>
         <div class="keyCombo cat-system"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>V</kbd></div><div>Paste / duplicate a copied mapped frame in map mode; otherwise paste a preset JSON.</div>
@@ -2556,6 +2558,43 @@
         syncActiveProjectionState();
         refreshMapView();
         showToast(`Assigned ${slot.sourceLabel} to frame ${activeCloneSlot + 1}.`);
+      }
+
+      async function cycleDeviceCamera() {
+        await refreshCameraDevices(false);
+        if (!cameraDevices.length) {
+          showToast("No extra cameras found yet. Start camera permission, then try again.");
+          return;
+        }
+        const ids = ["", ...cameraDevices.map(device => device.deviceId)];
+        let currentId = activeSourceMode === "clone" && cameraCloneSlots[activeCloneSlot]
+          ? (cameraCloneSlots[activeCloneSlot].sourceId || "")
+          : (activeCameraDeviceId || "");
+        let nextIndex = (ids.indexOf(currentId) + 1) % ids.length;
+        if (nextIndex < 0) nextIndex = 0;
+        const nextId = ids[nextIndex];
+        const select = document.getElementById("cameraDeviceSelect");
+        if (select) select.value = nextId;
+        activeCameraDeviceId = nextId;
+
+        if (activeSourceMode === "clone" && cameraCloneSlots[activeCloneSlot]) {
+          pushMapHistory();
+          await startCameraDeviceElement(nextId);
+          const slot = cameraCloneSlots[activeCloneSlot];
+          slot.sourceType = nextId ? "cameraDevice" : "camera";
+          slot.sourceId = nextId || "";
+          slot.sourceLabel = labelForCameraDevice(nextId);
+          updateCloneButtons();
+          syncActiveProjectionState();
+          refreshMapView();
+          showShortcutHUD("Camera Cycle", `Frame ${activeCloneSlot + 1}: ${slot.sourceLabel}`, null, true);
+          showToast(`Frame ${activeCloneSlot + 1} switched to ${slot.sourceLabel}.`);
+          return;
+        }
+
+        await startRealMedia(true, nextId);
+        showShortcutHUD("Camera Cycle", labelForCameraDevice(nextId), null, true);
+        showToast(`Main camera switched to ${labelForCameraDevice(nextId)}.`);
       }
 
       function hexToHue(hex) {
@@ -3604,6 +3643,11 @@
         if (!EFFECTS.some(e => e.id === cleaned.secondaryEffect)) cleaned.secondaryEffect = defaultSettings.secondaryEffect;
         if (pushHistory && !isApplyingHistory) undoStack.push({ ...settings });
         settings = cleaned;
+        document.querySelectorAll("select, input[type='range'], input[type='color'], button").forEach(control => {
+          control.addEventListener("change", () => setTimeout(() => releaseKeyboardFocus(false), 30));
+          control.addEventListener("click", () => setTimeout(() => releaseKeyboardFocus(false), 60));
+        });
+
         updateControlsFromSettings();
       }
 
@@ -5489,10 +5533,42 @@
         }
       }
 
+      function isTextEntryTarget(target) {
+        const tag = (target && target.tagName || "").toLowerCase();
+        if (tag === "textarea") return true;
+        if (target && target.isContentEditable) return true;
+        if (tag !== "input") return false;
+        const type = (target.type || "text").toLowerCase();
+        return ["text", "search", "email", "password", "url", "tel", "number"].includes(type);
+      }
+
+      function releaseKeyboardFocus(force = false) {
+        const active = document.activeElement;
+        if (!active || active === document.body || active === document.documentElement) return;
+        if (!force && isTextEntryTarget(active)) return;
+        try { active.blur(); } catch (error) {}
+        try { document.body.focus({ preventScroll: true }); } catch (error) {}
+      }
+
+      function installKeyboardFocusGuards() {
+        document.body.setAttribute("tabindex", "-1");
+        ["pointerup", "touchend", "mouseup"].forEach(type => {
+          window.addEventListener(type, event => {
+            const target = event.target;
+            if (target && target.closest && target.closest(".dockBody, .moreMenu, #cheatSheet, .guideBody, .guideFooter, #homeScreen")) {
+              setTimeout(() => releaseKeyboardFocus(false), 40);
+            }
+          }, true);
+        });
+        window.addEventListener("blur", () => setTimeout(() => releaseKeyboardFocus(true), 80), true);
+        document.addEventListener("visibilitychange", () => {
+          if (!document.hidden) setTimeout(() => releaseKeyboardFocus(true), 80);
+        });
+      }
+
       function setupKeyboard() {
-        document.addEventListener("keydown", event => {
-          const tag = (event.target && event.target.tagName || "").toLowerCase();
-          const isTyping = ["input", "textarea", "select"].includes(tag) && event.target.type !== "range";
+        const handleKeyDown = event => {
+          const isTyping = isTextEntryTarget(event.target);
           if (isTyping && !event.ctrlKey && !event.metaKey) return;
 
           const key = event.key.toLowerCase();
@@ -5560,7 +5636,13 @@
             return;
           }
 
-          if ((key === 'c' || (isMapControlContext() && key === 'v')) && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          if (key === 'c' && event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            event.preventDefault();
+            cycleDeviceCamera();
+            return;
+          }
+
+          if ((key === 'c' || (isMapControlContext() && key === 'v')) && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
             keyboardMapPanHeld = true;
             showMapShortcutHUD(isMapControlContext() ? "Frame Pan" : "Camera/Feed Pan", "Hold + arrows");
             event.preventDefault();
@@ -5749,9 +5831,9 @@
             case " ": togglePause(); event.preventDefault(); break;
             case "escape": cheatSheet.classList.add("hidden"); event.preventDefault(); break;
           }
-        });
+        };
 
-        document.addEventListener("keyup", event => {
+        const handleKeyUp = event => {
           const key = event.key.toLowerCase();
           clearActiveShortcut(key);
           if (key === 'd') keyboardMapCropHeld = false;
@@ -5761,7 +5843,10 @@
           if (key === 'z') keyboardZoomHeld = false;
           if (['d','m','v','c','x','z'].includes(key)) hideShortcutHUD();
           if (key.startsWith('arrow')) keyboardArrowHold = { key: "", start: 0, last: 0 };
-        });
+        };
+
+        window.addEventListener("keydown", handleKeyDown, true);
+        window.addEventListener("keyup", handleKeyUp, true);
       }
 
       function generateLoaderTargets() {
@@ -5867,6 +5952,7 @@
         setupControls();
         setupKeyboard();
         setupMapInteractions();
+        installKeyboardFocusGuards();
         installScrollLock();
         startHomeMotionLoop();
         window.addEventListener("resize", () => {
