@@ -66,51 +66,6 @@
       isolation: isolate;
     }
 
-    /*
-      iPad/iPhone home-screen Safari sometimes samples the very top pixels of a page
-      to decide whether the status-bar icons should be light/dark. This strip gives
-      iOS a near-white cue at the absolute top while the visible guard remains black.
-      The white cue is intentionally hairline-thin and visually masked underneath
-      the black status guard, so the user still sees a black top edge.
-    */
-    #statusGuardBar::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 1px;
-      background: rgba(255,255,255,0.92);
-      opacity: 0.92;
-      transform: translateY(-0.5px);
-      pointer-events: none;
-    }
-
-    #statusGuardBar::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 1px;
-      width: 100%;
-      height: calc(100% - 1px);
-      background: #000;
-      pointer-events: none;
-    }
-
-    #statusInfluencePixel {
-      position: fixed;
-      left: 0;
-      top: 0;
-      width: 100vw;
-      height: 1px;
-      background: rgba(255,255,255,0.98);
-      opacity: 0.98;
-      z-index: 2147483001;
-      pointer-events: none;
-      transform: translateY(-0.75px) translateZ(0);
-      mix-blend-mode: normal;
-    }
-
     @supports (height: 100dvh) {
       #statusGuardBar {
         height: max(env(safe-area-inset-top, 0px), 18px);
@@ -1654,7 +1609,6 @@
 <body>
   <div id="appShell">
     <div id="statusGuardBar" aria-hidden="true"></div>
-    <div id="statusInfluencePixel" aria-hidden="true"></div>
     <canvas id="visualCanvas" aria-label="MARZview audio reactive camera canvas"></canvas>
     <canvas id="mapCanvas" aria-label="MARZview mapping canvas"></canvas>
     <video id="videoSource" playsinline autoplay muted></video>
@@ -2112,8 +2066,9 @@
           <div class="sectionTitle" style="margin-top:14px;">Device cameras <span>front / wide / zoom when available</span></div>
           <label for="cameraDeviceSelect" class="selectLabel">Active Camera</label>
           <select id="cameraDeviceSelect"></select>
-          <div class="buttonGrid three">
+          <div class="buttonGrid four">
             <button id="refreshCamerasButton" class="ghostButton">Find Cameras</button>
+            <button id="cycleCameraButton" class="ghostButton">Next Camera</button>
             <button id="switchCameraButton" class="ghostButton">Use Camera</button>
             <button id="assignCameraFrameButton" class="ghostButton">Assign to Frame</button>
           </div>
@@ -2162,7 +2117,7 @@
         <div class="keyCombo cat-effects"><kbd>Shift</kbd> + <kbd>B</kbd></div><div>Randomize the look.</div>
 
         <div class="keyGroup cat-camera">Live controls + sliders</div>
-        <div class="keyCombo cat-camera"><kbd>Shift</kbd> + <kbd>C</kbd></div><div>Cycle through available device cameras one at a time. If a mapped frame is selected, assigns the next camera to that frame; otherwise switches the main camera feed.</div>
+        <div class="keyCombo cat-camera"><kbd>Shift</kbd> + <kbd>C</kbd></div><div>Cycle through available device cameras/front-back modes. If a mapped frame is selected, assigns the next camera to that frame; otherwise switches the main camera feed.</div>
         <div class="keyCombo cat-camera"><kbd>Q</kbd>/<kbd>W</kbd></div><div>Primary / secondary mix.</div>
         <div class="keyCombo cat-camera"><kbd>I</kbd>/<kbd>M</kbd></div><div>Intensity / mic sensitivity.</div>
         <div class="keyCombo cat-camera"><kbd>G</kbd>/<kbd>T</kbd></div><div>Glow / texture.</div>
@@ -2175,7 +2130,7 @@
 
         <div class="keyGroup cat-map">Projection mapping</div>
         <div class="keyCombo cat-map"><kbd>A</kbd></div><div>Open the Map panel and snap into keyboard mapping mode.</div>
-        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>A</kbd></div><div>Trace the dominant subject in the current frame and apply it as an editable custom mapping shape.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>A</kbd></div><div>Trace the dominant subject, switch to Warp, turn keyboard point editing on, then use arrows / D+arrows / O / Delete.</div>
         <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>L</kbd></div><div>Live cameras on / off while keeping mapped media boxes visible.</div>
         <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>S</kbd></div><div>Snap the live camera into a new mapped box.</div>
         <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>D</kbd></div><div>Duplicate the selected photo, video, GIF, or live-camera mapped box with an offset copy.</div>
@@ -2801,19 +2756,9 @@
       }
 
       function pulseStatusInfluencePixel() {
-        const pixel = document.getElementById("statusInfluencePixel");
         const guard = document.getElementById("statusGuardBar");
-        if (!pixel || !guard) return;
-        pixel.style.display = "block";
+        if (!guard) return;
         guard.style.display = "block";
-        window.clearTimeout(pulseStatusInfluencePixel._timer);
-        pulseStatusInfluencePixel._timer = window.setTimeout(() => {
-          /*
-            Keep the pixel in the DOM because iOS samples live content unpredictably.
-            It remains shifted above the visible content so the top edge still reads black.
-          */
-          pixel.style.display = "block";
-        }, 240);
       }
 
       function resizeCanvas() {
@@ -2952,22 +2897,46 @@
       }
 
       function labelForCameraDevice(deviceId) {
+        if (deviceId === "__environment") return "Back Camera";
+        if (deviceId === "__user") return "Front Camera";
         const index = cameraDevices.findIndex(device => device.deviceId === deviceId);
         const device = cameraDevices[index];
-        if (!device) return deviceId ? "Selected camera" : "Default camera";
+        if (!device) return deviceId ? "Selected camera" : "Default / browser choice";
         return device.label || `Camera ${index + 1}`;
+      }
+
+      function getCameraChoices() {
+        const choices = [
+          { id: "", label: "Default / browser choice" },
+          { id: "__environment", label: "Back Camera / environment" },
+          { id: "__user", label: "Front Camera / selfie" }
+        ];
+        const seen = new Set(choices.map(choice => choice.id));
+        cameraDevices.forEach((device, index) => {
+          if (!device.deviceId || seen.has(device.deviceId)) return;
+          seen.add(device.deviceId);
+          choices.push({ id: device.deviceId, label: device.label || `Device Camera ${index + 1}` });
+        });
+        return choices;
+      }
+
+      function videoConstraintsForCameraChoice(deviceId) {
+        const base = { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 60 } };
+        if (deviceId === "__user") return { ...base, facingMode: { ideal: "user" } };
+        if (deviceId === "__environment" || !deviceId) return { ...base, facingMode: { ideal: "environment" } };
+        return { ...base, deviceId: { exact: deviceId } };
       }
 
       function updateCameraDeviceSelect() {
         const select = document.getElementById("cameraDeviceSelect");
         if (!select) return;
         const current = activeCameraDeviceId || select.value || "";
+        const choices = getCameraChoices();
         select.innerHTML = "";
-        select.add(new Option("Default / browser choice", ""));
-        cameraDevices.forEach((device, index) => {
-          select.add(new Option(device.label || `Camera ${index + 1}`, device.deviceId));
+        choices.forEach(choice => {
+          select.add(new Option(choice.label, choice.id));
         });
-        select.value = cameraDevices.some(device => device.deviceId === current) ? current : "";
+        select.value = choices.some(choice => choice.id === current) ? current : "";
       }
 
       async function refreshCameraDevices(showMessage = false) {
@@ -2981,8 +2950,8 @@
           updateCameraDeviceSelect();
           const names = cameraDevices.map((device, index) => device.label || `Camera ${index + 1}`).join(", ");
           setCameraStatus(cameraDevices.length
-            ? `Detected ${cameraDevices.length} camera${cameraDevices.length === 1 ? "" : "s"}: ${names}.`
-            : "No camera devices listed yet. Start camera permission first, then tap Find Cameras.");
+            ? `Detected ${cameraDevices.length} browser-listed camera${cameraDevices.length === 1 ? "" : "s"}: ${names}. Front/back fallback modes are also available.`
+            : "No named camera devices listed yet. Front/back fallback modes are still available; start camera permission, then tap Next Camera.");
           if (showMessage) showToast(`Found ${cameraDevices.length} camera${cameraDevices.length === 1 ? "" : "s"}.`);
           return cameraDevices;
         } catch (error) {
@@ -3000,12 +2969,7 @@
         if (existing?.promise) return existing.promise;
 
         const promise = navigator.mediaDevices.getUserMedia({
-          video: {
-            deviceId: { exact: deviceId },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            frameRate: { ideal: 30, max: 60 }
-          },
+          video: videoConstraintsForCameraChoice(deviceId),
           audio: false
         }).then(async stream => {
           const v = document.createElement("video");
@@ -3063,11 +3027,11 @@
 
       async function cycleDeviceCamera() {
         await refreshCameraDevices(false);
-        if (!cameraDevices.length) {
-          showToast("No extra cameras found yet. Start camera permission, then try again.");
+        const ids = getCameraChoices().map(choice => choice.id);
+        if (!ids.length) {
+          showToast("No camera choices found yet. Start camera permission, then try again.");
           return;
         }
-        const ids = ["", ...cameraDevices.map(device => device.deviceId)];
         let currentId = activeSourceMode === "clone" && cameraCloneSlots[activeCloneSlot]
           ? (cameraCloneSlots[activeCloneSlot].sourceId || "")
           : (activeCameraDeviceId || "");
@@ -4349,21 +4313,27 @@
 
         settings.mapEnabled = true;
         settings.mapShape = "custom";
-        settings.mapMode = "mask";
+        settings.mapMode = "warp";
         settings.mapFrameX = (minX + maxX) / 2;
         settings.mapFrameY = (minY + maxY) / 2;
         settings.mapFrameW = Math.max(0.08, maxX - minX);
         settings.mapFrameH = Math.max(0.08, maxY - minY);
-        mapCustomPoints = contour;
+        mapCustomPoints = contour.map((point, index) => ({ ...point, fixed: false }));
         mapEditorVisible = true;
+        keyboardMapMode = true;
+        keyboardMapSelectedIndex = 0;
+        keyboardMapCropHeld = false;
+        keyboardMapMoveHeld = false;
         mapCanvas.classList.add("editing");
         updateControlsFromSettings();
         saveCurrentProjectionToActiveSource();
+        syncActiveProjectionState();
+        lastFrameTime = 0;
         renderMapOverlay();
 
         const confidence = Math.round(Math.min(99, Math.max(30, (best.area / n) * 520)));
-        setTraceStatus(`Trace applied as a custom shape with ${contour.length} editable points. Estimated confidence: ${confidence}%. Fine-tune by dragging points.`);
-        showToast("Subject trace applied to the map frame.");
+        setTraceStatus(`Trace applied as a custom WARP shape with ${contour.length} keyboard-editable points. Estimated confidence: ${confidence}%. Use arrows to select points, hold D + arrows to move a point, O to add a dot, Delete to remove an added dot.`);
+        showToast("Shift+A trace applied: warp + keyboard point editing is on.");
       }
 
       function defaultMapCustomPoints() {
@@ -4630,6 +4600,9 @@
             customPoints: JSON.parse(JSON.stringify(mapCustomPoints || []))
           };
         }
+        if (mode === 'warp' && settings.mapShape === 'custom') {
+          ensureMapState();
+        }
         updateControlsFromSettings();
         syncActiveProjectionState();
         lastFrameTime = 0;
@@ -4637,7 +4610,7 @@
         requestAnimationFrame(time => {
           if (isRunning && !isPaused) drawFrame(time);
         });
-        showToast(mode === 'mask' ? 'Map mode: mask outside the frame.' : 'Warp mode: contort the feedback into the mapped frame.');
+        showToast(mode === 'mask' ? 'Map mode: mask outside the frame.' : 'Warp mode: true media warp into the mapped frame.');
       }
 
       function activateMapPanel() {
@@ -4689,7 +4662,7 @@
         if (!EFFECTS.some(e => e.id === cleaned.secondaryEffect)) cleaned.secondaryEffect = defaultSettings.secondaryEffect;
         if (pushHistory && !isApplyingHistory) undoStack.push({ ...settings });
         settings = cleaned;
-        document.querySelectorAll("select, input[type='range'], input[type='color'], button").forEach(control => {
+        document.querySelectorAll("input[type='range'], input[type='color'], button").forEach(control => {
           control.addEventListener("change", () => setTimeout(() => releaseKeyboardFocus(false), 30));
           control.addEventListener("click", () => setTimeout(() => releaseKeyboardFocus(false), 60));
         });
@@ -5305,15 +5278,13 @@
         pushMapHistory();
         settings.mapEnabled = true;
         settings.mapMode = "warp";
-        if (settings.mapShape !== "custom") {
-          const handles = getMapHandlePoints();
-          mapCustomPoints = handles.map((point, index) => ({
-            x: clamp(point.x / canvas.width, 0, 1),
-            y: clamp(point.y / canvas.height, 0, 1),
-            fixed: index < 4
-          }));
-          settings.mapShape = "custom";
-        }
+        const handles = getMapHandlePoints();
+        mapCustomPoints = handles.map((point, index) => ({
+          x: clamp(point.x / canvas.width, 0, 1),
+          y: clamp(point.y / canvas.height, 0, 1),
+          fixed: index < 4
+        }));
+        settings.mapShape = "custom";
         mapEditorVisible = true;
         mapCanvas.classList.add("editing");
         syncActiveProjectionState();
@@ -5484,6 +5455,7 @@
         });
         document.getElementById("restartMediaButton").addEventListener("click", () => startRealMedia(true));
         document.getElementById("refreshCamerasButton").addEventListener("click", () => refreshCameraDevices(true));
+        document.getElementById("cycleCameraButton").addEventListener("click", cycleDeviceCamera);
         document.getElementById("switchCameraButton").addEventListener("click", switchMainCameraToSelected);
         document.getElementById("assignCameraFrameButton").addEventListener("click", assignSelectedCameraToActiveFrame);
         document.getElementById("cameraDeviceSelect").addEventListener("change", event => {
@@ -5635,9 +5607,7 @@
         try {
           setStatus("Requesting camera and microphone…");
           activeCameraDeviceId = preferredDeviceId !== null ? preferredDeviceId : activeCameraDeviceId;
-          const videoConstraints = activeCameraDeviceId
-            ? { deviceId: { exact: activeCameraDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 60 } }
-            : { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 60 } };
+          const videoConstraints = videoConstraintsForCameraChoice(activeCameraDeviceId);
           mediaStream = await navigator.mediaDevices.getUserMedia({
             video: videoConstraints,
             audio: {
@@ -6030,29 +6000,133 @@
         return frameFxCanvas;
       }
 
-      function renderProjectionInstance(source, state, clearCanvas = false) {
-        if (!source || !state || !state.mapEnabled) return;
-        source = renderFrameVisualSource(source, state.visualState || null);
-        const points = getProjectionPointsPixelsForState(state);
-        const box = getProjectionBBoxPixelsForState(state);
+      function getSourceCropForProjection(source, box, state) {
+        const dims = sourceDimensions(source);
+        const sourceW = Math.max(1, dims.w);
+        const sourceH = Math.max(1, dims.h);
+        const boxAspect = Math.max(0.02, box.w / Math.max(1, box.h));
+        const sourceAspect = sourceW / sourceH;
+        let sx = 0, sy = 0, sw = sourceW, sh = sourceH;
+
+        if (sourceAspect > boxAspect) {
+          sw = sourceH * boxAspect;
+          sx = (sourceW - sw) / 2;
+        } else {
+          sh = sourceW / boxAspect;
+          sy = (sourceH - sh) / 2;
+        }
+
         const zoom = clamp(Number(state.mapContentZoom || 1), 0.25, 4);
         const scaleX = clamp(Number(state.mapContentScaleX || 1), 0.25, 3);
         const scaleY = clamp(Number(state.mapContentScaleY || 1), 0.25, 3);
         const panX = clamp(Number(state.mapContentX || 0), -1, 1);
         const panY = clamp(Number(state.mapContentY || 0), -1, 1);
-        const dest = state.mapMode === 'warp'
-          ? { x: box.x, y: box.y, w: box.w, h: box.h }
-          : { x: 0, y: 0, w: canvas.width, h: canvas.height };
-        const drawW = dest.w * zoom * scaleX;
-        const drawH = dest.h * zoom * scaleY;
-        const drawX = dest.x + (dest.w - drawW) / 2 + panX * dest.w * 0.5;
-        const drawY = dest.y + (dest.h - drawH) / 2 + panY * dest.h * 0.5;
-        if (clearCanvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const cropW = clamp(sw / Math.max(0.01, zoom * scaleX), 1, sourceW);
+        const cropH = clamp(sh / Math.max(0.01, zoom * scaleY), 1, sourceH);
+        sx = clamp(sx + (sw - cropW) / 2 + panX * (sw - cropW) / 2, 0, sourceW - cropW);
+        sy = clamp(sy + (sh - cropH) / 2 + panY * (sh - cropH) / 2, 0, sourceH - cropH);
+        return { sx, sy, sw: cropW, sh: cropH };
+      }
+
+      function getWarpQuadForState(state, points, box) {
+        if (state.mapShape === 'circle' || state.mapShape === 'triangle') return null;
+        if (points && points.length >= 4) {
+          return [points[0], points[1], points[2], points[3]];
+        }
+        return [
+          { x: box.x, y: box.y },
+          { x: box.x + box.w, y: box.y },
+          { x: box.x + box.w, y: box.y + box.h },
+          { x: box.x, y: box.y + box.h }
+        ];
+      }
+
+      function bilinearPoint(quad, u, v) {
+        const p0 = quad[0], p1 = quad[1], p2 = quad[2], p3 = quad[3];
+        const topX = p0.x + (p1.x - p0.x) * u;
+        const topY = p0.y + (p1.y - p0.y) * u;
+        const botX = p3.x + (p2.x - p3.x) * u;
+        const botY = p3.y + (p2.y - p3.y) * u;
+        return {
+          x: topX + (botX - topX) * v,
+          y: topY + (botY - topY) * v
+        };
+      }
+
+      function drawImageTriangleAffine(image, s0, s1, s2, d0, d1, d2) {
+        const den = s0.x * (s1.y - s2.y) + s1.x * (s2.y - s0.y) + s2.x * (s0.y - s1.y);
+        if (Math.abs(den) < 0.00001) return;
+        const a = (d0.x * (s1.y - s2.y) + d1.x * (s2.y - s0.y) + d2.x * (s0.y - s1.y)) / den;
+        const b = (d0.y * (s1.y - s2.y) + d1.y * (s2.y - s0.y) + d2.y * (s0.y - s1.y)) / den;
+        const c = (d0.x * (s2.x - s1.x) + d1.x * (s0.x - s2.x) + d2.x * (s1.x - s0.x)) / den;
+        const d = (d0.y * (s2.x - s1.x) + d1.y * (s0.x - s2.x) + d2.y * (s1.x - s0.x)) / den;
+        const e = (d0.x * (s1.x * s2.y - s2.x * s1.y) + d1.x * (s2.x * s0.y - s0.x * s2.y) + d2.x * (s0.x * s1.y - s1.x * s0.y)) / den;
+        const f = (d0.y * (s1.x * s2.y - s2.x * s1.y) + d1.y * (s2.x * s0.y - s0.x * s2.y) + d2.y * (s0.x * s1.y - s1.x * s0.y)) / den;
+
         ctx.save();
-        ctx.globalAlpha = clamp(Number(state.opacity ?? 1), 0.05, 1);
+        ctx.beginPath();
+        ctx.moveTo(d0.x, d0.y);
+        ctx.lineTo(d1.x, d1.y);
+        ctx.lineTo(d2.x, d2.y);
+        ctx.closePath();
+        ctx.clip();
+        ctx.setTransform(a, b, c, d, e, f);
+        ctx.drawImage(image, 0, 0);
+        ctx.restore();
+      }
+
+      function drawWarpedImageToQuad(source, crop, quad, rows = 12, cols = 12) {
+        for (let y = 0; y < rows; y++) {
+          const v0 = y / rows;
+          const v1 = (y + 1) / rows;
+          for (let x = 0; x < cols; x++) {
+            const u0 = x / cols;
+            const u1 = (x + 1) / cols;
+
+            const s00 = { x: crop.sx + crop.sw * u0, y: crop.sy + crop.sh * v0 };
+            const s10 = { x: crop.sx + crop.sw * u1, y: crop.sy + crop.sh * v0 };
+            const s11 = { x: crop.sx + crop.sw * u1, y: crop.sy + crop.sh * v1 };
+            const s01 = { x: crop.sx + crop.sw * u0, y: crop.sy + crop.sh * v1 };
+
+            const d00 = bilinearPoint(quad, u0, v0);
+            const d10 = bilinearPoint(quad, u1, v0);
+            const d11 = bilinearPoint(quad, u1, v1);
+            const d01 = bilinearPoint(quad, u0, v1);
+
+            drawImageTriangleAffine(source, s00, s10, s11, d00, d10, d11);
+            drawImageTriangleAffine(source, s00, s11, s01, d00, d11, d01);
+          }
+        }
+      }
+
+      function renderProjectionInstance(source, state, clearCanvas = false) {
+        if (!source || !state || !state.mapEnabled) return;
+        source = renderFrameVisualSource(source, state.visualState || null);
+        const points = getProjectionPointsPixelsForState(state);
+        const box = getProjectionBBoxPixelsForState(state);
+        const crop = getSourceCropForProjection(source, box, state);
+        const alpha = clamp(Number(state.opacity ?? 1), 0.05, 1);
+
+        if (clearCanvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
         buildProjectionPath(ctx, state, points);
         ctx.clip();
-        ctx.drawImage(source, drawX, drawY, drawW, drawH);
+
+        if (state.mapMode === 'warp') {
+          const quad = getWarpQuadForState(state, points, box);
+          if (quad) {
+            const mesh = Math.max(6, Math.min(16, Math.round(Math.max(box.w, box.h) / 80)));
+            drawWarpedImageToQuad(source, crop, quad, mesh, mesh);
+          } else {
+            ctx.drawImage(source, crop.sx, crop.sy, crop.sw, crop.sh, box.x, box.y, box.w, box.h);
+          }
+        } else {
+          ctx.drawImage(source, crop.sx, crop.sy, crop.sw, crop.sh, box.x, box.y, box.w, box.h);
+        }
+
         ctx.restore();
       }
 
@@ -6213,6 +6287,7 @@
           fixed: index < 4
         }));
         settings.mapShape = "custom";
+        settings.mapMode = "warp";
         keyboardMapSelectedIndex = Math.min(keyboardMapSelectedIndex, mapCustomPoints.length - 1);
       }
 
@@ -6252,11 +6327,15 @@
 
       function nudgeKeyboardMapPoint(dx, dy) {
         pushMapHistory();
+        ensureKeyboardCustomShape();
         const handles = getMapHandlePoints();
         if (!handles.length) return;
         const index = ((keyboardMapSelectedIndex % handles.length) + handles.length) % handles.length;
         const point = handles[index];
         dragMapHandle(index, { x: point.x + dx, y: point.y + dy });
+        syncActiveProjectionState();
+        updateControlsFromSettings();
+        lastFrameTime = 0;
         renderMapOverlay();
       }
 
@@ -7300,7 +7379,7 @@
 
       function isTextEntryTarget(target) {
         const tag = (target && target.tagName || "").toLowerCase();
-        if (tag === "textarea") return true;
+        if (tag === "textarea" || tag === "select") return true;
         if (target && target.isContentEditable) return true;
         if (tag !== "input") return false;
         const type = (target.type || "text").toLowerCase();
@@ -7320,6 +7399,7 @@
         ["pointerup", "touchend", "mouseup"].forEach(type => {
           window.addEventListener(type, event => {
             const target = event.target;
+            if (target && target.closest && target.closest("select, option, input[type='color']")) return;
             if (target && target.closest && target.closest(".dockBody, .moreMenu, #cheatSheet, .guideBody, .guideFooter, #homeScreen")) {
               setTimeout(() => releaseKeyboardFocus(false), 40);
             }
@@ -7454,6 +7534,7 @@
             event.preventDefault();
             activateMapPanel();
             traceDominantSubject("balanced");
+            showMapShortcutHUD("Trace Warp", "Keyboard points on");
             return;
           }
 
@@ -7477,14 +7558,16 @@
             return;
           }
 
-          if (keyboardMapMode && (key === 'o') && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          if (isMapControlContext() && (key === 'o') && !event.ctrlKey && !event.metaKey && !event.altKey) {
             event.preventDefault();
+            keyboardMapMode = true;
             keyboardAddMapPoint();
             return;
           }
 
-          if (keyboardMapMode && (key === 'backspace' || key === 'delete') && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          if (isMapControlContext() && (key === 'backspace' || key === 'delete') && !event.ctrlKey && !event.metaKey && !event.altKey) {
             event.preventDefault();
+            keyboardMapMode = true;
             keyboardRemoveMapPoint();
             return;
           }
