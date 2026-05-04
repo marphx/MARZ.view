@@ -573,6 +573,20 @@
       font-size: 0.78rem;
     }
 
+    .lockFrameButton {
+      border-color: rgba(190, 104, 255, 0.52) !important;
+      background: rgba(110, 40, 160, 0.20) !important;
+      color: #f4eaff !important;
+      box-shadow: 0 0 18px rgba(190, 104, 255, 0.18), inset 0 0 12px rgba(255,255,255,0.03);
+    }
+
+    .lockFrameButton.active {
+      border-color: rgba(232, 180, 255, 0.84) !important;
+      background: rgba(150, 64, 220, 0.42) !important;
+      color: #fff7ff !important;
+      box-shadow: 0 0 24px rgba(190,104,255,0.38), inset 0 0 16px rgba(255,255,255,0.10);
+    }
+
     .mapButton {
       border-color: rgba(255, 138, 40, 0.54) !important;
       background: rgba(255, 138, 40, 0.18) !important;
@@ -1706,7 +1720,7 @@
           <div class="guideSection">
             <h3>5) Uploaded media, GIFs, and duplicated live frames</h3>
             <ul>
-              <li>Upload photos, videos, and GIFs into the piano-style media slots. Selecting a slot now creates an isolated mapped frame instead of replacing the full background.</li>
+              <li>Upload photos, videos, and GIFs into the piano-style media slots. Selecting a slot now creates an isolated mapped frame instead of replacing the full background. New uploads automatically appear as medium-sized proportional frames.</li>
               <li>GIFs loop automatically and are held until loaded so black placeholder frames are less likely to appear.</li>
               <li><strong>Add Source Frame</strong> duplicates the currently active live source or media source into another mapped frame.</li><li><strong>Assign to Frame</strong> in the Camera panel lets a selected mapped frame use a specific device camera, such as front, wide, or zoom, when the browser exposes those cameras. <strong>Shift + C</strong> cycles through the available cameras one at a time.</li>
               <li><strong>Frame 1–4</strong> buttons select which mapped frame you are editing.</li><li><strong>Frame visuals</strong> lets each mapped frame use its own primary and secondary visual modes. Use this selectively for performance when running several frames at once.</li>
@@ -1890,11 +1904,12 @@
             <button id="duplicateFrameButton" class="ghostButton">Duplicate Frame</button>
             <button id="reshapeFrameButton" class="ghostButton">Reshape/Warp</button>
           </div>
-          <div class="buttonGrid two">
+          <div class="buttonGrid three">
             <button id="frameDragButton" class="ghostButton active">Drag Frame</button>
             <button id="slideFeedButton" class="ghostButton">Slide Feed</button>
+            <button id="frameLockButton" class="ghostButton lockFrameButton">Frame Lock Off</button>
           </div>
-          <div class="mapHint" id="frameModeStatusText">Drag Frame moves the mapped box while the content orientation stays locked. Slide Feed pans/zooms the content inside the selected box.</div>
+          <div class="mapHint" id="frameModeStatusText">Drag Frame moves the mapped box while the content orientation stays locked. Slide Feed pans/zooms the content inside the selected box. Frame Lock prevents accidental dragging/re-shaping.</div>
           <div class="sectionTitle" style="margin-top:14px;">Subject trace <span>capture frame to map</span></div>
           <div class="buttonGrid three">
             <button id="traceSubjectButton" class="ghostButton traceButton">Trace Subject</button>
@@ -2744,6 +2759,7 @@
         updateCloneButtons();
         updateFrameFxControls();
         updateTouchFeedButton();
+        updateFrameLockButton();
         updateLiveCameraButton();
       }
 
@@ -3277,6 +3293,107 @@
         updateFrameFxControls();
       }
 
+      function sourceDimensionsForSlot(slot) {
+        if (!slot || !slot.element) return { width: 1, height: 1, aspect: 1 };
+        const el = slot.element;
+        const width = Number(el.videoWidth || el.naturalWidth || el.width || 1);
+        const height = Number(el.videoHeight || el.naturalHeight || el.height || 1);
+        return { width, height, aspect: width / Math.max(1, height) };
+      }
+
+      function getMediumFramePlacement(index = 0, width = 1, height = 1) {
+        const aspect = Math.max(0.2, Math.min(5, width / Math.max(1, height)));
+        const maxDim = 0.34;
+        const minDim = 0.16;
+        let w = maxDim;
+        let h = maxDim;
+        if (aspect >= 1) {
+          h = clamp(maxDim / aspect, minDim, maxDim);
+          w = clamp(h * aspect, minDim, maxDim);
+        } else {
+          w = clamp(maxDim * aspect, minDim, maxDim);
+          h = clamp(w / aspect, minDim, maxDim);
+        }
+        const positions = [
+          { x: 0.28, y: 0.30 },
+          { x: 0.68, y: 0.32 },
+          { x: 0.33, y: 0.68 },
+          { x: 0.70, y: 0.70 }
+        ];
+        const pos = positions[index] || { x: 0.5, y: 0.5 };
+        return { mapFrameX: pos.x, mapFrameY: pos.y, mapFrameW: w, mapFrameH: h };
+      }
+
+      function projectionForMediaSlot(index) {
+        const slot = mediaSlots[index];
+        const dims = sourceDimensionsForSlot(slot);
+        const placement = getMediumFramePlacement(index, dims.width, dims.height);
+        return {
+          ...getDefaultCloneProjection(index % 4),
+          ...placement,
+          mapEnabled: true,
+          mapShape: 'rectangle',
+          mapMode: 'mask',
+          mapContentZoom: 1,
+          mapContentX: 0,
+          mapContentY: 0,
+          mapContentScaleX: 1,
+          mapContentScaleY: 1,
+          customPoints: JSON.parse(JSON.stringify(defaultMapCustomPoints()))
+        };
+      }
+
+      function isActiveFrameLocked() {
+        return !!(activeSourceMode === 'clone' && cameraCloneSlots[activeCloneSlot] && cameraCloneSlots[activeCloneSlot].locked);
+      }
+
+      function updateFrameLockButton() {
+        const button = document.getElementById('frameLockButton');
+        if (!button) return;
+        const locked = isActiveFrameLocked();
+        button.textContent = locked ? 'Frame Lock On' : 'Frame Lock Off';
+        button.classList.toggle('active', locked);
+      }
+
+      function toggleActiveFrameLock() {
+        if (activeSourceMode !== 'clone' || !cameraCloneSlots[activeCloneSlot]) {
+          showToast('Select a mapped frame first.');
+          return;
+        }
+        cameraCloneSlots[activeCloneSlot].locked = !cameraCloneSlots[activeCloneSlot].locked;
+        updateFrameLockButton();
+        updateFrameModeStatus();
+        renderMapOverlay();
+        showToast(cameraCloneSlots[activeCloneSlot].locked ? 'Frame locked against dragging and point edits.' : 'Frame unlocked for dragging and reshaping.');
+      }
+
+      function createOrReplaceFrameFromSlot(index, frameIndex = null, select = true) {
+        const slot = mediaSlots[index];
+        if (!slot) return -1;
+        let target = frameIndex;
+        if (target == null || target < 0) target = cameraCloneSlots.findIndex(frame => !frame);
+        if (target === -1) target = cameraCloneSlots.findIndex(frame => frame && frame.sourceType === 'slot' && frame.sourceIndex === index);
+        if (target === -1) target = 0;
+        const existing = cameraCloneSlots[target];
+        const layer = existing ? Number(existing.layer ?? target) : getMaxCloneLayer() + 1;
+        cameraCloneSlots[target] = {
+          name: `Media Frame ${target + 1}`,
+          sourceType: 'slot',
+          sourceIndex: index,
+          sourceId: '',
+          sourceLabel: slot.name || `Slot ${index + 1}`,
+          opacity: existing ? clamp(Number(existing.opacity ?? 1), 0.05, 1) : 1,
+          layer,
+          locked: existing ? !!existing.locked : false,
+          projectionState: projectionForMediaSlot(index),
+          visualState: existing?.visualState || getDefaultFrameVisualState()
+        };
+        ensureCloneLayerDefaults(cameraCloneSlots[target], target);
+        normalizeCloneLayers();
+        if (select) activateCameraClone(target);
+        return target;
+      }
+
       function getDefaultCloneProjection(index = 0) {
         const seed = getProjectionStatePayload();
         const offsets = [0.24, 0.44, 0.64, 0.82];
@@ -3358,6 +3475,9 @@
         updateMediaSlotButtons();
         updateCloneButtons();
         updateFrameFxControls();
+        updateFrameLayerControls();
+        updateFrameLockButton();
+        updateFrameModeStatus();
         showToast(`Editing mapped frame ${index + 1}.`);
       }
 
@@ -3402,6 +3522,7 @@
         updateCloneButtons();
         updateMediaSlotButtons();
         updateFrameLayerControls();
+        updateFrameLockButton();
         renderMapOverlay();
         showToast('Selected camera clone cleared.');
       }
@@ -3499,10 +3620,6 @@
       function buildMediaFrameForSlot(index) {
         const slot = mediaSlots[index];
         if (!slot) return null;
-        const projection = slot.projectionState || getDefaultCloneProjection(index % 4);
-        projection.mapEnabled = true;
-        projection.mapShape = projection.mapShape || "rectangle";
-        projection.mapMode = projection.mapMode || "mask";
         return {
           name: `Media Slot ${index + 1}`,
           sourceType: "slot",
@@ -3511,7 +3628,8 @@
           sourceLabel: slot.name || `Slot ${index + 1}`,
           opacity: 1,
           layer: getMaxCloneLayer() + 1,
-          projectionState: projection,
+          locked: false,
+          projectionState: projectionForMediaSlot(index),
           visualState: getDefaultFrameVisualState()
         };
       }
@@ -3529,11 +3647,7 @@
         activeMediaSlot = index;
         let frameIndex = cameraCloneSlots.findIndex(frame => frame && frame.sourceType === "slot" && frame.sourceIndex === index);
         if (frameIndex === -1) {
-          frameIndex = cameraCloneSlots.findIndex(frame => !frame);
-          if (frameIndex === -1) frameIndex = 0;
-          cameraCloneSlots[frameIndex] = buildMediaFrameForSlot(index);
-          ensureCloneLayerDefaults(cameraCloneSlots[frameIndex], frameIndex);
-          normalizeCloneLayers();
+          frameIndex = createOrReplaceFrameFromSlot(index, null, false);
         }
         const frame = cameraCloneSlots[frameIndex];
         if (frame && frame.projectionState) frame.projectionState.mapEnabled = true;
@@ -3541,6 +3655,7 @@
         updateMediaSlotButtons();
         updateCloneButtons();
         updateFrameLayerControls();
+        updateFrameLockButton();
         refreshMapView();
         showToast(`Slot ${index + 1} added as its own mapped frame.`);
       }
@@ -3599,8 +3714,15 @@
       function handleMediaUpload(fileList) {
         const files = Array.from(fileList || []).slice(0, mediaSlots.length);
         if (!files.length) return;
-        files.forEach((file, index) => {
-          if (mediaSlots[index]?.url) URL.revokeObjectURL(mediaSlots[index].url);
+        pushMapHistory();
+        const usedSlots = new Set();
+        let lastFrameIndex = -1;
+        files.forEach(file => {
+          let slotIndex = mediaSlots.findIndex((slot, idx) => !slot && !usedSlots.has(idx));
+          if (slotIndex === -1) slotIndex = mediaSlots.findIndex((slot, idx) => !usedSlots.has(idx));
+          if (slotIndex === -1) slotIndex = 0;
+          usedSlots.add(slotIndex);
+          if (mediaSlots[slotIndex]?.url) URL.revokeObjectURL(mediaSlots[slotIndex].url);
           const type = file.type.startsWith("video/") ? "video" : (isGifFile(file) ? "gif" : "image");
           const url = URL.createObjectURL(file);
           let element;
@@ -3619,23 +3741,27 @@
             element.loading = "eager";
             element.src = url;
             if (type === "gif") {
-              element.onload = () => updateMediaStatusText(`GIF slot ${index + 1} ready: ${file.name}. It will loop as an animated image source.`);
+              element.onload = () => updateMediaStatusText(`GIF slot ${slotIndex + 1} ready: ${file.name}. It will loop as an animated image source.`);
             }
           }
-          mediaSlots[index] = {
+          mediaSlots[slotIndex] = {
             name: file.name,
             type,
             url,
             element,
-            projectionState: {
-              ...getDefaultCloneProjection(index % 4),
-              mapEnabled: true
-            }
+            projectionState: projectionForMediaSlot(slotIndex)
           };
+          const existingFrame = cameraCloneSlots.findIndex(frame => frame && frame.sourceType === 'slot' && frame.sourceIndex === slotIndex);
+          lastFrameIndex = createOrReplaceFrameFromSlot(slotIndex, existingFrame >= 0 ? existingFrame : null, false);
         });
+        cameraLiveEnabled = true;
+        updateLiveCameraButton();
         updateMediaSlotButtons();
-        const firstLoaded = files.length ? 0 : activeMediaSlot;
-        activateMediaSlot(firstLoaded);
+        updateCloneButtons();
+        updateFrameLayerControls();
+        if (lastFrameIndex >= 0) activateCameraClone(lastFrameIndex);
+        refreshMapView();
+        showToast(files.length === 1 ? 'Uploaded file added as its own mapped frame.' : `${files.length} uploads added as mapped frames.`);
       }
 
       function toggleActiveMediaPlayback() {
@@ -4496,6 +4622,7 @@
         reshapeFrameButton: ['Reshape / Warp', 'Turns on mapping, switches the selected frame into custom warp editing, and lets you drag points to contour the frame shape.'],
         frameDragButton: ['Drag Frame', 'Sets touch interaction so dragging moves the mapped box while the content inside stays locked in orientation.'],
         slideFeedButton: ['Slide Feed', 'Sets touch interaction so dragging inside the selected mapped box pans the video/photo/live feed inside the frame instead of moving the frame itself.'],
+        frameLockButton: ['Frame Lock', 'Locks the selected mapped frame in place so it cannot be dragged or reshaped accidentally. It uses its own purple color so you can recognize it quickly.'],
         traceSubjectButton: ['Trace Subject', 'Captures the active frame and detects the strongest subject-like region using edge, contrast, and color analysis. It then turns the result into an editable custom mapping shape.'],
         traceTightButton: ['Tight Trace', 'Runs a tighter subject trace for a closer fit around the detected subject. Useful when you need precision framing for projection.'],
         traceBoxButton: ['Box Trace', 'Creates a simpler rectangular detected-subject frame based on the dominant subject area.'],
@@ -4513,7 +4640,7 @@
         mediaLoadButton: ['Load Files / GIFs', 'Uploads images, videos, and GIFs into the media slots. GIFs play in a loop after loading.'],
         mediaCameraButton: ['Use Camera', 'Returns the active editable source back to the live camera.'],
         mediaPlayPauseButton: ['Play/Pause Media', 'Starts or pauses the selected uploaded video slot. GIFs loop automatically and do not need this button.'],
-        mediaAddFrameButton: ['Add Slot Frame', 'Creates or reselects an isolated mapped frame from the selected uploaded media slot. This keeps uploaded photos, videos, and GIFs inside their frame instead of taking over the full background.'],
+        mediaAddFrameButton: ['Add Slot Frame', 'Creates or reselects an isolated mapped frame from the selected uploaded media slot. New uploaded files now appear as medium-sized proportional mapped frames instead of taking over the full background.'],
         mediaDeleteSlotButton: ['Delete Slot', 'Deletes the selected uploaded media slot and removes any mapped frames that use it.'],
         mediaDeleteFrameButton: ['Delete Frame', 'Deletes the currently selected mapped frame without deleting the uploaded file from its slot.'],
         cameraDeviceSelect: ['Active Camera Selector', 'Chooses which device camera to use when the browser exposes multiple camera devices. Camera names usually appear after permission is granted.'],
@@ -4793,16 +4920,25 @@
         pushMapHistory();
         let target = cameraCloneSlots.findIndex(slot => !slot);
         if (target === -1) target = Math.min(activeCloneSlot + 1, cameraCloneSlots.length - 1);
-        const copy = cloneDeep(cameraCloneSlots[activeCloneSlot]);
+        const sourceFrame = cameraCloneSlots[activeCloneSlot];
+        const copy = cloneDeep(sourceFrame);
         copy.name = `Mapped Frame ${target + 1}`;
         copy.layer = getMaxCloneLayer() + 1;
         copy.opacity = clamp(Number(copy.opacity ?? 1), 0.05, 1);
+        copy.locked = false;
         copy.projectionState = offsetProjectionStateForDuplicate(copy.projectionState);
+        if (copy.sourceType === 'slot') {
+          copy.sourceLabel = mediaSlots[copy.sourceIndex]?.name || copy.sourceLabel;
+        } else if (copy.sourceType === 'camera' || copy.sourceType === 'cameraDevice') {
+          copy.sourceLabel = copy.sourceId ? labelForCameraDevice(copy.sourceId) : 'Live Camera';
+        }
         cameraCloneSlots[target] = copy;
         ensureCloneLayerDefaults(cameraCloneSlots[target], target);
         normalizeCloneLayers();
         activateCameraClone(target);
         setTouchFeedMode(false, false);
+        updateFrameLockButton();
+        refreshMapView();
         showToast(`Duplicated into mapped frame ${target + 1}.`);
       }
 
@@ -4936,6 +5072,7 @@
         document.getElementById("reshapeFrameButton").addEventListener("click", reshapeActiveFrameNow);
         document.getElementById("frameDragButton").addEventListener("click", () => setTouchFeedMode(false, true));
         document.getElementById("slideFeedButton").addEventListener("click", () => setTouchFeedMode(true, true));
+        document.getElementById("frameLockButton").addEventListener("click", toggleActiveFrameLock);
         document.getElementById("traceSubjectButton").addEventListener("click", () => traceDominantSubject("balanced"));
         document.getElementById("traceTightButton").addEventListener("click", () => traceDominantSubject("tight"));
         document.getElementById("traceBoxButton").addEventListener("click", () => traceDominantSubject("box"));
@@ -6053,16 +6190,27 @@
             historyPushed: false
           };
           if (hit !== -1) {
+            if (isActiveFrameLocked()) {
+              showToast('Frame Lock is on. Turn it off to reshape this frame.');
+              return;
+            }
             mapDrag.mode = 'point';
             mapCanvas.setPointerCapture(event.pointerId);
             return;
           }
           if (isPointInsideMap(point)) {
-            mapDrag.mode = touchFeedMode ? 'contentPan' : 'move';
-            mapCanvas.setPointerCapture(event.pointerId);
+            if (touchFeedMode) {
+              mapDrag.mode = 'contentPan';
+              mapCanvas.setPointerCapture(event.pointerId);
+            } else if (!isActiveFrameLocked()) {
+              mapDrag.mode = 'move';
+              mapCanvas.setPointerCapture(event.pointerId);
+            } else {
+              showToast('Frame Lock is on.');
+            }
             return;
           }
-          if (settings.mapShape === 'custom') {
+          if (settings.mapShape === 'custom' && !isActiveFrameLocked()) {
             mapDrag.mode = 'create';
             mapCanvas.setPointerCapture(event.pointerId);
           }
@@ -6644,6 +6792,10 @@
       function updateFrameModeStatus() {
         const el = document.getElementById("frameModeStatusText");
         if (!el) return;
+        if (isActiveFrameLocked()) {
+          el.textContent = "Frame Lock is on: the selected frame stays fixed in place. Turn Frame Lock off to drag or reshape it. You can still adjust content with buttons and keyboard controls.";
+          return;
+        }
         el.textContent = touchFeedMode
           ? "Slide Feed is on: drag inside the selected mapped box to pan the video/photo/live feed inside it. Tap away to return to Drag Frame mode."
           : "Drag Frame is on: drag the mapped box around while the content orientation stays locked. Tap the selected frame once to switch into Slide Feed.";
