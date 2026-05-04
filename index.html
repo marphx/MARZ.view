@@ -1118,6 +1118,171 @@
       font-size: 0.78rem;
     }
 
+    .floatingWindow {
+      touch-action: none;
+      resize: none;
+      min-width: 285px;
+      min-height: 220px;
+      max-width: calc(100vw - 12px);
+      max-height: calc(100dvh - 12px);
+      will-change: transform, width, height;
+    }
+
+    .floatingWindow.windowCollapsed {
+      height: 58px !important;
+      min-height: 58px !important;
+      overflow: hidden !important;
+    }
+
+    .floatingWindow.windowExpanded {
+      left: 8px !important;
+      top: calc(8px + var(--safe-top)) !important;
+      right: auto !important;
+      bottom: auto !important;
+      width: calc(100vw - 16px) !important;
+      height: calc(100dvh - 16px - var(--safe-top) - var(--safe-bottom)) !important;
+      max-width: calc(100vw - 16px);
+      max-height: calc(100dvh - 16px - var(--safe-top) - var(--safe-bottom));
+    }
+
+    .windowDragHandle {
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .windowDragHandle:active {
+      cursor: grabbing;
+    }
+
+    .windowResizeHandle {
+      position: absolute;
+      right: 5px;
+      bottom: 5px;
+      width: 22px;
+      height: 22px;
+      z-index: 160;
+      cursor: nwse-resize;
+      border-right: 2px solid rgba(87,255,231,0.34);
+      border-bottom: 2px solid rgba(87,255,231,0.34);
+      border-radius: 0 0 12px 0;
+      opacity: 0.7;
+      touch-action: none;
+    }
+
+    .windowResizeHandle::before,
+    .windowResizeHandle::after {
+      content: "";
+      position: absolute;
+      right: 2px;
+      bottom: 6px;
+      width: 13px;
+      height: 1px;
+      background: rgba(87,255,231,0.28);
+      transform: rotate(-45deg);
+    }
+
+    .windowResizeHandle::after {
+      right: 7px;
+      bottom: 3px;
+      width: 8px;
+    }
+
+    .windowResizeHandle:hover {
+      opacity: 1;
+      border-color: rgba(255,138,40,0.58);
+    }
+
+    .dockWindowButtons,
+    .cheatWindowButtons {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .windowMiniButton {
+      border: 1px solid rgba(87,255,231,0.20);
+      background: rgba(87,255,231,0.08);
+      color: #eafffb;
+      border-radius: 999px;
+      min-width: 31px;
+      min-height: 28px;
+      padding: 5px 8px;
+      font: inherit;
+      font-size: 0.66rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .windowMiniButton:hover {
+      border-color: rgba(255,138,40,0.42);
+      background: rgba(255,138,40,0.10);
+    }
+
+    #controlDock.windowCollapsed .dockBody,
+    #controlDock.windowCollapsed .panelTabs,
+    #controlDock.windowCollapsed .moreMenu {
+      display: none !important;
+    }
+
+    #cheatSheet.floatingWindow {
+      overflow: hidden;
+    }
+
+    #cheatSheet .cheatHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 0 0 10px;
+      margin: 0 0 10px;
+      border-bottom: 1px solid rgba(87,255,231,0.14);
+    }
+
+    #cheatSheet .cheatHeader h3 {
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
+    #cheatSheet.windowCollapsed .keyGrid {
+      display: none !important;
+    }
+
+    #cheatSheet.windowCollapsed {
+      min-height: 58px !important;
+      height: 58px !important;
+    }
+
+    .dockBody {
+      container-type: inline-size;
+    }
+
+    @container (max-width: 420px) {
+      .buttonGrid,
+      .buttonGrid.three,
+      .buttonGrid.four,
+      .buttonGrid.five,
+      .toggleRow {
+        grid-template-columns: 1fr !important;
+      }
+      .panelTabs {
+        grid-template-columns: 1fr 1fr !important;
+      }
+      .controlRow {
+        grid-template-columns: 1fr auto !important;
+      }
+      .controlRow input[type="range"],
+      .controlRow select {
+        grid-column: 1 / -1;
+      }
+      .pianoSlots {
+        grid-template-columns: repeat(4, 1fr) !important;
+      }
+    }
+
     #toast {
       position: fixed;
       left: 50%;
@@ -1267,6 +1432,27 @@
       .dockBody { max-height: calc(100dvh - 132px - var(--safe-top) - var(--safe-bottom)); }
       #cheatSheet { max-height: calc(100vh - 92px); width: min(520px, 48vw); }
     }
+  
+    @media (max-width: 780px) {
+      #controlDock.floatingWindow,
+      #cheatSheet.floatingWindow {
+        right: auto !important;
+        bottom: auto !important;
+      }
+      #controlDock.floatingWindow:not(.windowExpanded),
+      #cheatSheet.floatingWindow:not(.windowExpanded) {
+        max-width: calc(100vw - 12px);
+        max-height: calc(100dvh - 12px);
+      }
+      #controlDock.floatingWindow .dockBody {
+        max-height: calc(100% - 112px);
+      }
+      #cheatSheet.floatingWindow .keyGrid {
+        max-height: calc(100% - 60px);
+        overflow-y: auto;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1352,7 +1538,7 @@
             <h3>2) Main screens and buttons</h3>
             <div class="guideGrid">
               <div class="guideChip"><strong>Home</strong>Animated intro page. Use UI Color to recolor the app, Start to open this guide, Replay Loader to preview the loading screen, and Report a Bug to email a bug report.</div>
-              <div class="guideChip"><strong>Help</strong>Opens this guide again from inside the app so users can review the workflow without leaving the project.</div>
+              <div class="guideChip"><strong>Help</strong>Opens this guide again from inside the app so users can review the workflow without leaving the project.</div><div class="guideChip"><strong>Floating windows</strong>Drag the Controls or Keyboard header to move it, pull the lower-right corner to resize it, use – to collapse, and □ to expand.</div>
               <div class="guideChip"><strong>Full</strong>Requests fullscreen and reduces the interface for projection use.</div><div class="guideChip"><strong>Camera devices</strong>Use Find Cameras, Use Camera, Assign to Frame, or <strong>Shift + C</strong> to choose front, wide, zoom, or other available device cameras.</div>
               <div class="guideChip"><strong>Normal</strong>Resets the active view back to a smooth normal camera feed with effects off and a clean default state.</div>
             </div>
@@ -1438,13 +1624,17 @@
       <div id="loaderText" class="loaderText">loading...</div>
     </section>
 
-    <div id="controlDock" class="collapsed hidden" aria-label="Control panels">
+    <div id="controlDock" class="collapsed hidden floatingWindow" aria-label="Control panels">
       <div class="dockHeader">
         <strong>Controls</strong>
         <div class="dockHeaderActions">
           <button id="appHomeButton" class="miniButton" title="Return home">Home</button>
           <button id="mapButton" class="miniButton mapButton" title="Projection mapping">Map</button>
           <button id="moreControlsButton" class="miniButton" title="More controls">More</button>
+          <div class="dockWindowButtons" aria-label="Control window options">
+            <button id="dockCollapseWindowButton" class="windowMiniButton" title="Collapse controls window" type="button">–</button>
+            <button id="dockExpandWindowButton" class="windowMiniButton" title="Expand controls window" type="button">□</button>
+          </div>
         </div>
         <div id="moreControlsMenu" class="moreMenu hidden" aria-label="More control options">
           <button id="keysButton" class="miniButton" title="Keyboard shortcuts">Keys</button>
@@ -1455,6 +1645,7 @@
           <button id="randomizeButton" class="miniButton" title="Randomize look">Dice</button>
           <button id="appBugButton" class="miniButton" title="Report a bug">Bug</button>
           <button id="collapseButton" class="miniButton" title="Collapse controls">Hide</button>
+          <button id="dockResetWindowButton" class="miniButton" title="Reset controls window position">Reset Win</button>
         </div>
       </div>
       <div class="dockBody">
@@ -1712,8 +1903,15 @@
       </div>
     </div>
 
-    <aside id="cheatSheet" class="hidden" aria-label="Keyboard cheat sheet">
-      <h3>Keyboard cheat sheet</h3>
+    <aside id="cheatSheet" class="hidden floatingWindow" aria-label="Keyboard cheat sheet">
+      <div class="cheatHeader windowDragHandle">
+        <h3>Keyboard cheat sheet</h3>
+        <div class="cheatWindowButtons" aria-label="Shortcut guide window options">
+          <button id="cheatCollapseWindowButton" class="windowMiniButton" type="button" title="Collapse shortcuts">–</button>
+          <button id="cheatExpandWindowButton" class="windowMiniButton" type="button" title="Expand shortcuts">□</button>
+          <button id="cheatResetWindowButton" class="windowMiniButton" type="button" title="Reset shortcut window">↺</button>
+        </div>
+      </div>
       <div class="keyGrid">
         <div class="keyGroup cat-nav">Navigation + panels</div>
         <div class="keyCombo cat-nav"><kbd>K</kbd></div><div>Show / hide this shortcut guide.</div>
@@ -1723,6 +1921,7 @@
         <div class="keyCombo cat-nav"><kbd>X</kbd></div><div>Open Export panel.</div>
         <div class="keyCombo cat-nav"><kbd>C</kbd></div><div>Open Camera panel.</div>
         <div class="keyCombo cat-nav"><kbd>P</kbd></div><div>Collapse / expand the control dock.</div>
+        <div class="keyCombo cat-nav"><kbd>Drag headers</kbd></div><div>Move the Controls and Keyboard windows anywhere on screen. Use the corner handle to resize them.</div>
         <div class="keyCombo cat-nav"><kbd>Esc</kbd></div><div>Hide the guide.</div>
 
         <div class="keyGroup cat-effects">Effects + layers</div>
@@ -3837,6 +4036,175 @@
         showToast("Bug report template opened. A copy was also attempted to clipboard.");
       }
 
+      const floatingWindowStates = new Map();
+
+      function clampWindowRect(rect) {
+        const margin = 6;
+        const maxW = window.innerWidth - margin * 2;
+        const maxH = window.innerHeight - margin * 2;
+        const width = Math.max(260, Math.min(rect.width, maxW));
+        const height = Math.max(58, Math.min(rect.height, maxH));
+        const left = Math.max(margin, Math.min(rect.left, window.innerWidth - width - margin));
+        const top = Math.max(margin + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-top')) || 0), Math.min(rect.top, window.innerHeight - height - margin));
+        return { left, top, width, height };
+      }
+
+      function setFloatingWindowRect(el, rect, save = true) {
+        if (!el) return;
+        const next = clampWindowRect(rect);
+        el.style.left = `${next.left}px`;
+        el.style.top = `${next.top}px`;
+        el.style.right = 'auto';
+        el.style.bottom = 'auto';
+        el.style.width = `${next.width}px`;
+        el.style.height = `${next.height}px`;
+        el.style.maxWidth = 'none';
+        el.style.maxHeight = 'none';
+        if (save) {
+          try { localStorage.setItem(`marzview_window_${el.id}`, JSON.stringify(next)); } catch (e) {}
+        }
+      }
+
+      function getFloatingWindowRect(el) {
+        const rect = el.getBoundingClientRect();
+        return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+      }
+
+      function restoreFloatingWindow(el, defaults) {
+        if (!el) return;
+        let saved = null;
+        try { saved = JSON.parse(localStorage.getItem(`marzview_window_${el.id}`) || 'null'); } catch (e) {}
+        setFloatingWindowRect(el, saved || defaults, false);
+      }
+
+      function resetFloatingWindow(el, defaults) {
+        if (!el) return;
+        el.classList.remove('windowCollapsed', 'windowExpanded');
+        setFloatingWindowRect(el, defaults, true);
+        showToast(`${el.id === 'controlDock' ? 'Controls' : 'Window'} position reset.`);
+      }
+
+      function toggleWindowCollapsed(el) {
+        if (!el) return;
+        el.classList.toggle('windowCollapsed');
+        if (el.classList.contains('windowCollapsed')) el.classList.remove('windowExpanded');
+      }
+
+      function toggleWindowExpanded(el) {
+        if (!el) return;
+        el.classList.toggle('windowExpanded');
+        if (el.classList.contains('windowExpanded')) el.classList.remove('windowCollapsed');
+      }
+
+      function makeFloatingWindow(el, options = {}) {
+        if (!el || floatingWindowStates.has(el.id)) return;
+        const defaults = options.defaults || { left: 12, top: 70, width: 390, height: Math.min(window.innerHeight - 95, 740) };
+        restoreFloatingWindow(el, defaults);
+
+        const state = { dragging: false, resizing: false, startX: 0, startY: 0, startRect: null };
+        floatingWindowStates.set(el.id, { state, defaults });
+
+        const dragHandle = options.dragHandle || el.querySelector('.dockHeader') || el.querySelector('.cheatHeader') || el;
+        dragHandle.classList.add('windowDragHandle');
+
+        const resizeHandle = document.createElement('div');
+        resizeHandle.className = 'windowResizeHandle';
+        resizeHandle.setAttribute('aria-hidden', 'true');
+        el.appendChild(resizeHandle);
+
+        const startDrag = event => {
+          const target = event.target;
+          if (target && target.closest && target.closest('button, input, select, textarea, .moreMenu, .windowResizeHandle')) return;
+          if (el.classList.contains('windowExpanded')) el.classList.remove('windowExpanded');
+          state.dragging = true;
+          state.startX = event.clientX;
+          state.startY = event.clientY;
+          state.startRect = getFloatingWindowRect(el);
+          el.style.transition = 'none';
+          try { dragHandle.setPointerCapture(event.pointerId); } catch (e) {}
+          event.preventDefault();
+        };
+
+        const startResize = event => {
+          if (el.classList.contains('windowExpanded')) el.classList.remove('windowExpanded');
+          if (el.classList.contains('windowCollapsed')) el.classList.remove('windowCollapsed');
+          state.resizing = true;
+          state.startX = event.clientX;
+          state.startY = event.clientY;
+          state.startRect = getFloatingWindowRect(el);
+          el.style.transition = 'none';
+          try { resizeHandle.setPointerCapture(event.pointerId); } catch (e) {}
+          event.preventDefault();
+        };
+
+        const move = event => {
+          if (!state.dragging && !state.resizing) return;
+          const dx = event.clientX - state.startX;
+          const dy = event.clientY - state.startY;
+          if (state.dragging) {
+            setFloatingWindowRect(el, {
+              ...state.startRect,
+              left: state.startRect.left + dx,
+              top: state.startRect.top + dy
+            }, false);
+          } else if (state.resizing) {
+            setFloatingWindowRect(el, {
+              ...state.startRect,
+              width: state.startRect.width + dx,
+              height: state.startRect.height + dy
+            }, false);
+          }
+          event.preventDefault();
+        };
+
+        const end = event => {
+          if (!state.dragging && !state.resizing) return;
+          state.dragging = false;
+          state.resizing = false;
+          el.style.transition = '';
+          setFloatingWindowRect(el, getFloatingWindowRect(el), true);
+          try { dragHandle.releasePointerCapture(event.pointerId); } catch (e) {}
+          try { resizeHandle.releasePointerCapture(event.pointerId); } catch (e) {}
+        };
+
+        dragHandle.addEventListener('pointerdown', startDrag);
+        resizeHandle.addEventListener('pointerdown', startResize);
+        window.addEventListener('pointermove', move, true);
+        window.addEventListener('pointerup', end, true);
+        window.addEventListener('pointercancel', end, true);
+      }
+
+      function resetFloatingWindowsToSafeArea() {
+        const control = document.getElementById('controlDock');
+        const cheat = document.getElementById('cheatSheet');
+        if (control) {
+          const defaults = { left: Math.max(8, window.innerWidth - 430), top: 72, width: Math.min(410, window.innerWidth - 16), height: Math.min(760, window.innerHeight - 88) };
+          resetFloatingWindow(control, defaults);
+        }
+        if (cheat) {
+          const defaults = { left: 14, top: 82, width: Math.min(520, window.innerWidth - 28), height: Math.min(680, window.innerHeight - 105) };
+          resetFloatingWindow(cheat, defaults);
+        }
+      }
+
+      function setupFloatingWindows() {
+        const control = document.getElementById('controlDock');
+        const cheat = document.getElementById('cheatSheet');
+        makeFloatingWindow(control, {
+          dragHandle: control?.querySelector('.dockHeader'),
+          defaults: { left: Math.max(8, window.innerWidth - 430), top: 72, width: Math.min(410, window.innerWidth - 16), height: Math.min(760, window.innerHeight - 88) }
+        });
+        makeFloatingWindow(cheat, {
+          dragHandle: cheat?.querySelector('.cheatHeader'),
+          defaults: { left: 14, top: 82, width: Math.min(520, window.innerWidth - 28), height: Math.min(680, window.innerHeight - 105) }
+        });
+        window.addEventListener('resize', () => {
+          [control, cheat].forEach(el => {
+            if (el) setFloatingWindowRect(el, getFloatingWindowRect(el), true);
+          });
+        });
+      }
+
       function setupControls() {
         populateEffects();
         updateControlsFromSettings();
@@ -3885,6 +4253,12 @@
         });
 
         document.getElementById("collapseButton").addEventListener("click", toggleControls);
+        document.getElementById("dockCollapseWindowButton").addEventListener("click", () => toggleWindowCollapsed(controlDock));
+        document.getElementById("dockExpandWindowButton").addEventListener("click", () => toggleWindowExpanded(controlDock));
+        document.getElementById("dockResetWindowButton").addEventListener("click", () => resetFloatingWindow(controlDock, { left: Math.max(8, window.innerWidth - 430), top: 72, width: Math.min(410, window.innerWidth - 16), height: Math.min(760, window.innerHeight - 88) }));
+        document.getElementById("cheatCollapseWindowButton").addEventListener("click", () => toggleWindowCollapsed(cheatSheet));
+        document.getElementById("cheatExpandWindowButton").addEventListener("click", () => toggleWindowExpanded(cheatSheet));
+        document.getElementById("cheatResetWindowButton").addEventListener("click", () => resetFloatingWindow(cheatSheet, { left: 14, top: 82, width: Math.min(520, window.innerWidth - 28), height: Math.min(680, window.innerHeight - 105) }));
         document.getElementById("primaryToggleButton").addEventListener("click", () => toggleEffectLayer("primary"));
         document.getElementById("secondaryToggleButton").addEventListener("click", () => toggleEffectLayer("secondary"));
         document.getElementById("normalQualityButton").addEventListener("click", toggleNormalQuality);
@@ -6074,6 +6448,7 @@
         setupControls();
         setupKeyboard();
         setupMapInteractions();
+        setupFloatingWindows();
         installKeyboardFocusGuards();
         installScrollLock();
         startHomeMotionLoop();
