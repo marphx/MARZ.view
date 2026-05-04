@@ -58,16 +58,62 @@
       left: 0;
       top: 0;
       width: 100vw;
-      height: max(env(safe-area-inset-top, 0px), 14px);
+      height: max(env(safe-area-inset-top, 0px), 18px);
       background: #000;
-      z-index: 92;
+      z-index: 2147483000;
       pointer-events: none;
       transform: translateZ(0);
+      isolation: isolate;
+    }
+
+    /*
+      iPad/iPhone home-screen Safari sometimes samples the very top pixels of a page
+      to decide whether the status-bar icons should be light/dark. This strip gives
+      iOS a near-white cue at the absolute top while the visible guard remains black.
+      The white cue is intentionally hairline-thin and visually masked underneath
+      the black status guard, so the user still sees a black top edge.
+    */
+    #statusGuardBar::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 1px;
+      background: rgba(255,255,255,0.92);
+      opacity: 0.92;
+      transform: translateY(-0.5px);
+      pointer-events: none;
+    }
+
+    #statusGuardBar::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 1px;
+      width: 100%;
+      height: calc(100% - 1px);
+      background: #000;
+      pointer-events: none;
+    }
+
+    #statusInfluencePixel {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 1px;
+      background: rgba(255,255,255,0.98);
+      opacity: 0.98;
+      z-index: 2147483001;
+      pointer-events: none;
+      transform: translateY(-0.75px) translateZ(0);
+      mix-blend-mode: normal;
     }
 
     @supports (height: 100dvh) {
       #statusGuardBar {
-        height: max(env(safe-area-inset-top, 0px), 14px);
+        height: max(env(safe-area-inset-top, 0px), 18px);
       }
     }
 
@@ -630,7 +676,7 @@
 
     .pianoSlots {
       display: grid;
-      grid-template-columns: repeat(8, minmax(0, 1fr));
+      grid-template-columns: repeat(10, minmax(0, 1fr));
       gap: 6px;
       margin-top: 10px;
     }
@@ -1608,6 +1654,7 @@
 <body>
   <div id="appShell">
     <div id="statusGuardBar" aria-hidden="true"></div>
+    <div id="statusInfluencePixel" aria-hidden="true"></div>
     <canvas id="visualCanvas" aria-label="MARZview audio reactive camera canvas"></canvas>
     <canvas id="mapCanvas" aria-label="MARZview mapping canvas"></canvas>
     <video id="videoSource" playsinline autoplay muted></video>
@@ -1712,7 +1759,7 @@
               <li>Turn mapping on if needed and choose a shape or use <strong>Custom</strong>.</li>
               <li>Use <strong>Snap Live Box</strong> to instantly place the live camera into its own mapped frame. Drag the frame, drag corner points, or add/remove custom points.</li>
               <li>Use <strong>Mask</strong> to hide everything outside the shape, or <strong>Warp</strong> to contort the visual inside the shape.</li>
-              <li>Use <strong>Drag Frame</strong> to move the box while keeping the content orientation locked. Use <strong>Slide Feed</strong> or tap the selected frame once to pan/zoom the content inside the frame. Tap away to return to Drag Frame. Tap <strong>Refresh Map</strong> if you ever want to force the latest contour/stretch placement to snap into view.</li>
+              <li>Use <strong>Drag Frame</strong> to move the box while keeping the content orientation locked. Use <strong>Shift+W</strong> for Warp/Contort, <strong>Shift+M</strong> for Mask, and <strong>Slide Feed</strong> or tap the selected frame once to pan/zoom the content inside the frame. Tap away to return to Drag Frame. Tap <strong>Refresh Map</strong> if you ever want to force the latest contour/stretch placement to snap into view.</li>
               <li>Use <strong>Trace Subject</strong>, <strong>Tight Trace</strong>, or <strong>Box Trace</strong> to detect a dominant subject and create a more precise frame automatically.</li>
             </ol>
           </div>
@@ -1941,8 +1988,9 @@
             <button id="mediaCameraButton" class="ghostButton">Use Camera</button>
             <button id="mediaPlayPauseButton" class="ghostButton">Play/Pause</button>
           </div>
-          <div class="buttonGrid three">
+          <div class="buttonGrid four">
             <button id="mediaAddFrameButton" class="ghostButton">Add Slot Frame</button>
+            <button id="mediaSwapFrameButton" class="ghostButton">Swap Into Frame</button>
             <button id="mediaDeleteSlotButton" class="ghostButton">Delete Slot</button>
             <button id="mediaDeleteFrameButton" class="ghostButton">Delete Frame</button>
           </div>
@@ -1954,12 +2002,18 @@
             <button id="clearCloneButton" class="ghostButton">Clear Selected Clone</button>
           </div>
           <div class="buttonGrid four" id="cloneSlotButtons">
-            <button class="ghostButton cloneSlotButton" data-clone-slot="0" type="button">Clone 1</button>
-            <button class="ghostButton cloneSlotButton" data-clone-slot="1" type="button">Clone 2</button>
-            <button class="ghostButton cloneSlotButton" data-clone-slot="2" type="button">Clone 3</button>
-            <button class="ghostButton cloneSlotButton" data-clone-slot="3" type="button">Clone 4</button>
+            <button class="ghostButton cloneSlotButton" data-clone-slot="0" type="button">Frame 1</button>
+            <button class="ghostButton cloneSlotButton" data-clone-slot="1" type="button">Frame 2</button>
+            <button class="ghostButton cloneSlotButton" data-clone-slot="2" type="button">Frame 3</button>
+            <button class="ghostButton cloneSlotButton" data-clone-slot="3" type="button">Frame 4</button>
+            <button class="ghostButton cloneSlotButton" data-clone-slot="4" type="button">Frame 5</button>
+            <button class="ghostButton cloneSlotButton" data-clone-slot="5" type="button">Frame 6</button>
+            <button class="ghostButton cloneSlotButton" data-clone-slot="6" type="button">Frame 7</button>
+            <button class="ghostButton cloneSlotButton" data-clone-slot="7" type="button">Frame 8</button>
+            <button class="ghostButton cloneSlotButton" data-clone-slot="8" type="button">Frame 9</button>
+            <button class="ghostButton cloneSlotButton" data-clone-slot="9" type="button">Frame 10</button>
           </div>
-          <div class="mapHint" id="cloneStatusText">Add up to four live camera clone frames, then select one to edit its own map, zoom, pan, squish, opacity, and layer order.</div>
+          <div class="mapHint" id="cloneStatusText">Add up to ten mapped frames, then select one to edit its own source, map, zoom, pan, squish, opacity, effects, and layer order.</div>
           <div class="sectionTitle" style="margin-top:12px;">Frame layering <span>overlap, opacity, foreground</span></div>
           <div class="buttonGrid four">
             <button id="frameToBackButton" class="ghostButton">To Back</button>
@@ -1992,6 +2046,8 @@
             <button class="slotButton black" data-slot="5" type="button">6</button>
             <button class="slotButton white" data-slot="6" type="button">7</button>
             <button class="slotButton black" data-slot="7" type="button">8</button>
+            <button class="slotButton white" data-slot="8" type="button">9</button>
+            <button class="slotButton black" data-slot="9" type="button">10</button>
           </div>
           <div class="mapHint" id="mediaStatusText">Camera is active. Load photos, videos, or looping GIFs into the piano slots, then switch to a slot and map it. In Map mode the stage background stays black by default, and uploads appear as their own mapped boxes.</div>
 
@@ -2115,11 +2171,28 @@
         <div class="keyCombo cat-camera"><kbd>R</kbd>/<kbd>F</kbd></div><div>Color drift / feedback amount.</div>
         <div class="keyCombo cat-camera"><kbd>J</kbd>/<kbd>Y</kbd></div><div>Zoom warp / camera ghost.</div>
         <div class="keyCombo cat-camera"><kbd>;</kbd>/<kbd>'</kbd></div><div>Export bitrate / FPS.</div>
-        <div class="keyCombo cat-camera"><kbd>Hold slider key</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Adjust that setting. Add <kbd>Shift</kbd> for larger changes.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold slider key</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Adjust that setting. Add <kbd>Shift</kbd> for larger changes. The bottom HUD now clears on key release and has a fallback auto-hide.</div>
 
         <div class="keyGroup cat-map">Projection mapping</div>
         <div class="keyCombo cat-map"><kbd>A</kbd></div><div>Open the Map panel and snap into keyboard mapping mode.</div>
         <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>A</kbd></div><div>Trace the dominant subject in the current frame and apply it as an editable custom mapping shape.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>L</kbd></div><div>Live cameras on / off while keeping mapped media boxes visible.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>S</kbd></div><div>Snap the live camera into a new mapped box.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>D</kbd></div><div>Duplicate the selected photo, video, GIF, or live-camera mapped box with an offset copy.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>R</kbd></div><div>Open reshape/custom warp editing for the selected mapped frame.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>K</kbd></div><div>Frame Lock on / off for the selected mapped frame.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>W</kbd></div><div>Warp / contort mode. Forces the selected mapped frame to update in warp mode.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>M</kbd></div><div>Mask mode. Crops outside the mapped shape.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>E</kbd></div><div>Map edit mode on / off.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>F</kbd></div><div>MapFX on / off. With Edit off, tap a mapped box to target it with the main controls.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>G</kbd></div><div>Make the selected box the full background, or clear it back to black.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>V</kbd></div><div>Slide Feed mode: drag/pan content inside the selected mapped box.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>X</kbd></div><div>Drag Frame mode: drag the mapped box itself.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>T</kbd></div><div>Swap / rotate active mapped frame sources globally.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>O</kbd></div><div>Add/reselect the current media slot as its own mapped frame.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>I</kbd></div><div>Swap Media Mode on/off. Select a frame, then tap a media slot to replace that frame’s media while preserving dimensions.</div>
+        <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>Delete</kbd></div><div>Delete the selected mapped frame.</div>
+
         <div class="keyCombo cat-map"><kbd>Arrows</kbd></div><div>Step through mapping points when no modifier is held.</div>
         <div class="keyCombo cat-map"><kbd>D</kbd> + <kbd>Arrows</kbd></div><div>Move / crop the selected mapping point with precision. Hold longer to accelerate.</div>
         <div class="keyCombo cat-map"><kbd>M</kbd> + <kbd>Arrows</kbd></div><div>Move the whole contoured frame as one piece. Hold longer to accelerate.</div>
@@ -2127,14 +2200,14 @@
         <div class="keyCombo cat-map"><kbd>Delete</kbd>/<kbd>Backspace</kbd></div><div>Remove the selected added point. Corner points stay protected.</div>
         <div class="keyCombo cat-map"><kbd>C</kbd> + <kbd>Arrows</kbd></div><div>Pan the active photo / video / camera feed inside the mapped frame. Outside map mode, this pans the full camera/feed source. <kbd>V</kbd> still works as a backup.</div>
         <div class="keyCombo cat-map"><kbd>X</kbd> + <kbd>Arrows</kbd></div><div>Squish or stretch the active media inside the mapped frame.</div>
-        <div class="keyCombo cat-map"><kbd>Z</kbd> + <kbd>+</kbd>/<kbd>-</kbd></div><div>Zoom the active media inside the mapped frame.</div>
+        <div class="keyCombo cat-map"><kbd>Z</kbd> + <kbd>+</kbd>/<kbd>-</kbd>/<kbd>Arrows</kbd></div><div>Smoothly zoom with +/− and pan with arrows while Z is held.</div>
         <div class="keyCombo cat-map"><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></div><div>Cycle through mapped frames while in map mode.</div>
         <div class="keyCombo cat-map"><kbd>\</kbd></div><div>Hide/show mapping outlines, dotted borders, and editable point dots without changing the mapped frames.</div>
         <div class="keyCombo cat-map"><kbd>T</kbd></div><div>Swap / rotate the assigned uploaded photos, GIFs, videos, or live feeds across active mapped frames while preserving frame sizes.</div>
         <div class="keyCombo cat-map"><kbd>Pinch / Touch Feed</kbd></div><div>Turn on Touch Feed, then pinch to zoom or drag inside the mapped frame to pan the content.</div>
         <div class="keyCombo cat-map"><kbd>F</kbd></div><div>Request true fullscreen and reduce the interface to the small hide/show dot.</div>
-        <div class="keyCombo cat-map"><kbd>Piano Slots</kbd></div><div>On-screen media keys switch between custom photo/video/GIF slots for casting and editing.</div>
-        <div class="keyCombo cat-map"><kbd>Clone 1–4</kbd></div><div>Use the on-screen clone buttons to add and edit multiple live camera frames at once.</div>
+        <div class="keyCombo cat-map"><kbd>Media Slots 1–10</kbd></div><div>On-screen media keys hold up to ten uploaded photo/video/GIF sources. In Swap Media Mode, tapping one replaces the selected frame’s source.</div>
+        <div class="keyCombo cat-map"><kbd>Frames 1–10</kbd></div><div>Use the on-screen frame buttons to add and edit up to ten mapped media or live camera frames.</div>
         <div class="keyCombo cat-map"><kbd>Frame FX</kbd></div><div>On-screen controls assign primary/secondary visual modes to the selected mapped frame.</div>
         <div class="keyCombo cat-map"><kbd>Normal</kbd></div><div>On-screen reset returns the app to a smooth normal camera view with effects off.</div>
 
@@ -2275,6 +2348,8 @@
       let smoothSettingTweens = {};
       let activeShortcutSetting = null;
       let activeShortcutKey = null;
+      let shortcutHudTimer = null;
+      let lastShortcutHudAt = 0;
       let isRunning = false;
       let isPaused = false;
       let demoMode = false;
@@ -2291,8 +2366,9 @@
       let activeCameraDeviceId = "";
       let cameraDeviceSources = new Map();
       let cameraProjectionState = null;
-      let cameraCloneSlots = Array.from({ length: 4 }, () => null);
-      let mediaSlots = Array.from({ length: 8 }, () => null);
+      let cameraCloneSlots = Array.from({ length: 10 }, () => null);
+      let mediaSlots = Array.from({ length: 10 }, () => null);
+      let swapMediaMode = false;
       let mediaStream = null;
       let audioContext = null;
       let analyser = null;
@@ -2724,7 +2800,24 @@
         statusPill.innerHTML = message;
       }
 
+      function pulseStatusInfluencePixel() {
+        const pixel = document.getElementById("statusInfluencePixel");
+        const guard = document.getElementById("statusGuardBar");
+        if (!pixel || !guard) return;
+        pixel.style.display = "block";
+        guard.style.display = "block";
+        window.clearTimeout(pulseStatusInfluencePixel._timer);
+        pulseStatusInfluencePixel._timer = window.setTimeout(() => {
+          /*
+            Keep the pixel in the DOM because iOS samples live content unpredictably.
+            It remains shifted above the visible content so the top edge still reads black.
+          */
+          pixel.style.display = "block";
+        }, 240);
+      }
+
       function resizeCanvas() {
+        pulseStatusInfluencePixel();
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         canvas.width = Math.max(1, Math.floor(window.innerWidth * dpr));
         canvas.height = Math.max(1, Math.floor(window.innerHeight * dpr));
@@ -2770,6 +2863,7 @@
         updateFrameLockButton();
         updateMapBackgroundButton();
         updateMapFxButton();
+        updateSwapMediaButton();
         updateLiveCameraButton();
       }
 
@@ -3460,12 +3554,18 @@
           h = clamp(w / aspect, minDim, maxDim);
         }
         const positions = [
-          { x: 0.28, y: 0.30 },
-          { x: 0.68, y: 0.32 },
-          { x: 0.33, y: 0.68 },
-          { x: 0.70, y: 0.70 }
+          { x: 0.24, y: 0.26 },
+          { x: 0.50, y: 0.26 },
+          { x: 0.76, y: 0.26 },
+          { x: 0.24, y: 0.50 },
+          { x: 0.50, y: 0.50 },
+          { x: 0.76, y: 0.50 },
+          { x: 0.24, y: 0.74 },
+          { x: 0.50, y: 0.74 },
+          { x: 0.76, y: 0.74 },
+          { x: 0.50, y: 0.86 }
         ];
-        const pos = positions[index] || { x: 0.5, y: 0.5 };
+        const pos = positions[index % positions.length] || { x: 0.5, y: 0.5 };
         return { mapFrameX: pos.x, mapFrameY: pos.y, mapFrameW: w, mapFrameH: h };
       }
 
@@ -3541,14 +3641,26 @@
 
       function getDefaultCloneProjection(index = 0) {
         const seed = getProjectionStatePayload();
-        const offsets = [0.24, 0.44, 0.64, 0.82];
+        const positions = [
+          { x: 0.24, y: 0.26 },
+          { x: 0.50, y: 0.26 },
+          { x: 0.76, y: 0.26 },
+          { x: 0.24, y: 0.50 },
+          { x: 0.50, y: 0.50 },
+          { x: 0.76, y: 0.50 },
+          { x: 0.24, y: 0.74 },
+          { x: 0.50, y: 0.74 },
+          { x: 0.76, y: 0.74 },
+          { x: 0.50, y: 0.86 }
+        ];
+        const pos = positions[index % positions.length] || { x: 0.5, y: 0.5 };
         return {
           ...seed,
           mapEnabled: true,
           mapShape: seed.mapShape || 'rectangle',
           mapMode: seed.mapMode || 'mask',
-          mapFrameX: offsets[index] || 0.5,
-          mapFrameY: 0.34 + (index % 2) * 0.24,
+          mapFrameX: pos.x,
+          mapFrameY: pos.y,
           mapFrameW: 0.24,
           mapFrameH: 0.24,
           mapContentZoom: 1,
@@ -3780,6 +3892,61 @@
           projectionState: projectionForMediaSlot(index),
           visualState: getDefaultFrameVisualState()
         };
+      }
+
+      function updateSwapMediaButton() {
+        const button = document.getElementById("mediaSwapFrameButton");
+        if (!button) return;
+        button.textContent = swapMediaMode ? "Swap Mode On" : "Swap Into Frame";
+        button.classList.toggle("active", swapMediaMode);
+      }
+
+      function toggleSwapMediaMode(force = null) {
+        swapMediaMode = typeof force === "boolean" ? force : !swapMediaMode;
+        updateSwapMediaButton();
+        showToast(swapMediaMode
+          ? "Swap Media Mode on: select a mapped frame, then tap a media slot to replace its source while preserving shape."
+          : "Swap Media Mode off.");
+      }
+
+      function replaceActiveFrameSourceWithMediaSlot(index = activeMediaSlot) {
+        const slot = mediaSlots[index];
+        activeMediaSlot = index;
+        if (!slot) {
+          updateMediaSlotButtons();
+          showToast(`Slot ${index + 1} is empty. Load a file first.`);
+          return;
+        }
+        if (activeSourceMode !== "clone" || !cameraCloneSlots[activeCloneSlot]) {
+          const frameIndex = createOrReplaceFrameFromSlot(index, null, true);
+          updateMediaSlotButtons();
+          updateCloneButtons();
+          updateSwapMediaButton();
+          refreshMapView();
+          showToast(`Slot ${index + 1} added as a mapped frame.`);
+          return frameIndex;
+        }
+        pushMapHistory();
+        syncActiveProjectionState();
+        const frame = cameraCloneSlots[activeCloneSlot];
+        const preservedProjection = cloneDeep(frame.projectionState || getProjectionStatePayload());
+        const preservedVisualState = cloneDeep(frame.visualState || getDefaultFrameVisualState());
+        frame.sourceType = "slot";
+        frame.sourceIndex = index;
+        frame.sourceId = "";
+        frame.sourceLabel = slot.name || `Slot ${index + 1}`;
+        frame.projectionState = preservedProjection;
+        frame.visualState = preservedVisualState;
+        if (frame.projectionState) frame.projectionState.mapEnabled = true;
+        applyProjectionStatePayload(frame.projectionState);
+        updateMediaSlotButtons();
+        updateCloneButtons();
+        updateFrameFxControls();
+        updateFrameLayerControls();
+        updateSwapMediaButton();
+        refreshMapView();
+        showToast(`Frame ${activeCloneSlot + 1} now uses slot ${index + 1}. Size and shape preserved.`);
+        return activeCloneSlot;
       }
 
       function selectMediaSlotFrame(index) {
@@ -4437,10 +4604,40 @@
       }
 
       function setMapMode(mode) {
+        if (!['mask', 'warp'].includes(mode)) return;
+        pushMapHistory();
+        settings.mapEnabled = true;
         settings.mapMode = mode;
+        if (activeSourceMode === 'clone' && cameraCloneSlots[activeCloneSlot]) {
+          cameraCloneSlots[activeCloneSlot].projectionState = {
+            ...getProjectionStatePayload(),
+            mapEnabled: true,
+            mapMode: mode,
+            customPoints: JSON.parse(JSON.stringify(mapCustomPoints || []))
+          };
+        } else if (activeSourceMode === 'slot' && mediaSlots[activeMediaSlot]) {
+          mediaSlots[activeMediaSlot].projectionState = {
+            ...getProjectionStatePayload(),
+            mapEnabled: true,
+            mapMode: mode,
+            customPoints: JSON.parse(JSON.stringify(mapCustomPoints || []))
+          };
+        } else {
+          cameraProjectionState = {
+            ...getProjectionStatePayload(),
+            mapEnabled: true,
+            mapMode: mode,
+            customPoints: JSON.parse(JSON.stringify(mapCustomPoints || []))
+          };
+        }
         updateControlsFromSettings();
+        syncActiveProjectionState();
+        lastFrameTime = 0;
         renderMapOverlay();
-        showToast(mode === 'mask' ? 'Map mode: mask outside the frame.' : 'Map mode: contort the visual feedback into the shape.');
+        requestAnimationFrame(time => {
+          if (isRunning && !isPaused) drawFrame(time);
+        });
+        showToast(mode === 'mask' ? 'Map mode: mask outside the frame.' : 'Warp mode: contort the feedback into the mapped frame.');
       }
 
       function activateMapPanel() {
@@ -4796,6 +4993,7 @@
         mediaCameraButton: ['Use Camera', 'Returns the active editable source back to the live camera.'],
         mediaPlayPauseButton: ['Play/Pause Media', 'Starts or pauses the selected uploaded video slot. GIFs loop automatically and do not need this button.'],
         mediaAddFrameButton: ['Add Slot Frame', 'Creates or reselects an isolated mapped frame from the selected uploaded media slot. New uploaded files now appear as medium-sized proportional mapped frames instead of taking over the full background.'],
+        mediaSwapFrameButton: ['Swap Into Frame', 'Turns on Swap Media Mode. Select a mapped frame, then tap an uploaded media slot to replace that frame’s source while preserving its dimensions, position, shape, opacity, layer order, and effects.'],
         mediaDeleteSlotButton: ['Delete Slot', 'Deletes the selected uploaded media slot and removes any mapped frames that use it.'],
         mediaDeleteFrameButton: ['Delete Frame', 'Deletes the currently selected mapped frame without deleting the uploaded file from its slot.'],
         cameraDeviceSelect: ['Active Camera Selector', 'Chooses which device camera to use when the browser exposes multiple camera devices. Camera names usually appear after permission is granted.'],
@@ -4964,6 +5162,7 @@
       }
 
       function toggleSmartHelp() {
+        if (masterUIHidden) return;
         smartHelpMode = !smartHelpMode;
         smartHelpButton.classList.toggle('active', smartHelpMode);
         smartHelpCard.classList.add('hidden');
@@ -5251,6 +5450,7 @@
         document.getElementById("mediaCameraButton").addEventListener("click", () => useCameraSource());
         document.getElementById("mediaPlayPauseButton").addEventListener("click", toggleActiveMediaPlayback);
         document.getElementById("mediaAddFrameButton").addEventListener("click", () => selectMediaSlotFrame(activeMediaSlot));
+        document.getElementById("mediaSwapFrameButton").addEventListener("click", () => toggleSwapMediaMode());
         document.getElementById("mediaDeleteSlotButton").addEventListener("click", () => deleteMediaSlot(activeMediaSlot));
         document.getElementById("mediaDeleteFrameButton").addEventListener("click", deleteActiveMappedFrame);
         document.getElementById("addCloneButton").addEventListener("click", addCameraClone);
@@ -5268,7 +5468,11 @@
         document.getElementById("framePrimarySelect").addEventListener("change", event => setFrameFxSelect("primary", event.target.value));
         document.getElementById("frameSecondarySelect").addEventListener("change", event => setFrameFxSelect("secondary", event.target.value));
         document.getElementById("mediaUpload").addEventListener("change", event => handleMediaUpload(event.target.files));
-        document.querySelectorAll(".slotButton[data-slot]").forEach(button => button.addEventListener("click", () => activateMediaSlot(Number(button.dataset.slot))));
+        document.querySelectorAll(".slotButton[data-slot]").forEach(button => button.addEventListener("click", () => {
+          const slotIndex = Number(button.dataset.slot);
+          if (swapMediaMode) replaceActiveFrameSourceWithMediaSlot(slotIndex);
+          else activateMediaSlot(slotIndex);
+        }));
         document.querySelectorAll(".cloneSlotButton[data-clone-slot]").forEach(button => button.addEventListener("click", () => activateCameraClone(Number(button.dataset.cloneSlot))));
         document.getElementById("randomizeButton").addEventListener("click", randomizeSettings);
         document.getElementById("recordButton").addEventListener("click", toggleRecording);
@@ -5295,6 +5499,7 @@
       }
 
       function showPanel(panelId) {
+        pulseStatusInfluencePixel();
         controlDock.classList.remove("collapsed");
         document.querySelectorAll(".panelTab").forEach(tab => tab.classList.toggle("active", tab.dataset.panel === panelId));
         document.querySelectorAll(".panelPage").forEach(panel => panel.classList.toggle("active", panel.id === panelId));
@@ -5315,11 +5520,19 @@
         showToast(isPaused ? "Visual engine paused." : "Visual engine running.");
       }
 
+      function updateSmartHelpVisibility() {
+        if (!smartHelpButton) return;
+        const shouldHide = masterUIHidden || homeScreen.classList.contains("hidden") === false || guideScreen.classList.contains("hidden") === false || loaderScreen.classList.contains("hidden") === false;
+        smartHelpButton.classList.toggle("hidden", shouldHide);
+        if (masterUIHidden && smartHelpMode) deactivateSmartHelp();
+      }
+
       function updateMasterHideButton() {
         masterHideButton.classList.toggle("dot", masterUIHidden);
         masterHideButton.textContent = masterUIHidden ? "UI" : "Hide UI";
         masterHideButton.setAttribute("aria-label", masterUIHidden ? "Show interface" : "Hide interface");
         masterHideButton.title = masterUIHidden ? "Show interface" : "Hide interface";
+        updateSmartHelpVisibility();
       }
 
       function setMasterUIHidden(hidden) {
@@ -5340,6 +5553,7 @@
       }
 
       function showHome() {
+        pulseStatusInfluencePixel();
         homeScreen.classList.remove("hidden");
         guideScreen.classList.add("hidden");
         loaderScreen.classList.add("hidden");
@@ -5359,15 +5573,18 @@
         deactivateSmartHelp();
         updateMasterHideButton();
         updateMapGuideToggleButton();
+        updateSmartHelpVisibility();
       }
 
       function showVisualizer() {
+        pulseStatusInfluencePixel();
         homeScreen.classList.add("hidden");
         guideScreen.classList.add("hidden");
         masterHideButton.classList.remove("hidden");
         mapGuideToggleButton.classList.remove("hidden");
         smartHelpButton.classList.remove("hidden");
         updateMasterHideButton();
+        updateSmartHelpVisibility();
         updateMapGuideToggleButton();
         if (masterUIHidden) {
           controlDock.classList.add("hidden");
@@ -5383,6 +5600,7 @@
       }
 
       function showGuide(mode = "live") {
+        pulseStatusInfluencePixel();
         pendingLaunchMode = mode;
         homeScreen.classList.add("hidden");
         guideScreen.classList.remove("hidden");
@@ -5396,6 +5614,7 @@
         masterUIHidden = false;
         updateMasterHideButton();
         updateMapGuideToggleButton();
+        updateSmartHelpVisibility();
       }
 
       function launchFromGuide() {
@@ -6942,12 +7161,40 @@
       }
 
       function hideShortcutHUD() {
+        window.clearTimeout(shortcutHudTimer);
         shortcutHUD.classList.remove("visible");
         shortcutHUD.classList.add("hidden");
       }
 
+      function isAnyShortcutModeHeld() {
+        return !!(activeShortcutKey || keyboardMapCropHeld || keyboardMapMoveHeld || keyboardMapPanHeld || keyboardMapSquishHeld || keyboardZoomHeld);
+      }
+
+      function resetShortcutState(hide = true) {
+        activeShortcutKey = null;
+        activeShortcutSetting = null;
+        keyboardMapCropHeld = false;
+        keyboardMapMoveHeld = false;
+        keyboardMapPanHeld = false;
+        keyboardMapSquishHeld = false;
+        keyboardZoomHeld = false;
+        keyboardArrowHold = { key: "", start: 0, last: 0 };
+        if (hide) hideShortcutHUD();
+      }
+
+      function scheduleShortcutHudAutoHide(delay = 1500) {
+        window.clearTimeout(shortcutHudTimer);
+        const stamp = lastShortcutHudAt;
+        shortcutHudTimer = window.setTimeout(() => {
+          if (stamp === lastShortcutHudAt) {
+            resetShortcutState(true);
+          }
+        }, delay);
+      }
+
       function showShortcutHUD(label, value = "", percent = null, buttonMode = false) {
         if (masterUIHidden) return;
+        lastShortcutHudAt = performance.now();
         shortcutHUD.classList.remove("hidden");
         shortcutHUD.classList.add("visible");
         shortcutHUDLabel.textContent = label;
@@ -6956,6 +7203,7 @@
         shortcutHUDButton.classList.toggle("hidden", !buttonMode);
         if (buttonMode) shortcutHUDButton.textContent = value || label;
         if (percent !== null) shortcutHUDFill.style.width = `${clamp(percent, 0, 1) * 100}%`;
+        scheduleShortcutHudAutoHide(buttonMode ? 950 : 1500);
       }
 
       function showRangeShortcutHUD(range) {
@@ -7077,10 +7325,86 @@
             }
           }, true);
         });
-        window.addEventListener("blur", () => setTimeout(() => releaseKeyboardFocus(true), 80), true);
+        window.addEventListener("blur", () => {
+          resetShortcutState(true);
+          setTimeout(() => releaseKeyboardFocus(true), 80);
+        }, true);
         document.addEventListener("visibilitychange", () => {
-          if (!document.hidden) setTimeout(() => releaseKeyboardFocus(true), 80);
+          if (document.hidden) resetShortcutState(true);
+          else setTimeout(() => releaseKeyboardFocus(true), 80);
         });
+      }
+
+      function flashShortcutAction(label, value = "") {
+        showShortcutHUD(label, value, null, true);
+      }
+
+      function handleShiftShortcut(key, event) {
+        if (!event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return false;
+        switch (key) {
+          case 'l':
+            toggleLiveCameras();
+            flashShortcutAction('Live Cams', cameraLiveEnabled ? 'On' : 'Off');
+            return true;
+          case 's':
+            snapLiveCameraBox();
+            flashShortcutAction('Snap Live Box', 'Created');
+            return true;
+          case 'd':
+            duplicateActiveMappedFrame();
+            flashShortcutAction('Duplicate Frame', 'Offset copy');
+            return true;
+          case 'r':
+            reshapeActiveFrameNow();
+            flashShortcutAction('Reshape / Warp', 'Ready');
+            return true;
+          case 'k':
+            toggleActiveFrameLock();
+            flashShortcutAction('Frame Lock', isActiveFrameLocked() ? 'On' : 'Off');
+            return true;
+          case 'g':
+            toggleSelectedFrameBackground();
+            flashShortcutAction('Make Background', mapBackgroundSource ? 'On' : 'Black');
+            return true;
+          case 'f':
+            toggleMapFxMode();
+            flashShortcutAction('MapFX', mapFxMode ? 'On' : 'Off');
+            return true;
+          case 'w':
+            setMapMode('warp');
+            flashShortcutAction('Warp Mode', 'Contort');
+            return true;
+          case 'm':
+            setMapMode('mask');
+            flashShortcutAction('Mask Mode', 'Crop');
+            return true;
+          case 'e':
+            toggleMapEditor();
+            flashShortcutAction('Map Edit', mapEditorVisible ? 'On' : 'Off');
+            return true;
+          case 'v':
+            setTouchFeedMode(true, true);
+            flashShortcutAction('Slide Feed', 'On');
+            return true;
+          case 'x':
+            setTouchFeedMode(false, true);
+            flashShortcutAction('Drag Frame', 'On');
+            return true;
+          case 't':
+            swapMappedFrameSources();
+            flashShortcutAction('Swap Frames', 'Rotated');
+            return true;
+          case 'o':
+            selectMediaSlotFrame(activeMediaSlot);
+            flashShortcutAction('Add Slot Frame', `Slot ${activeMediaSlot + 1}`);
+            return true;
+          case 'i':
+            toggleSwapMediaMode();
+            flashShortcutAction('Swap Media Mode', swapMediaMode ? 'On' : 'Off');
+            return true;
+          default:
+            return false;
+        }
       }
 
       function setupKeyboard() {
@@ -7090,6 +7414,18 @@
 
           const key = event.key.toLowerCase();
           const rawKey = event.key;
+
+          if (handleShiftShortcut(key, event)) {
+            event.preventDefault();
+            return;
+          }
+
+          if (event.shiftKey && (key === 'backspace' || key === 'delete') && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            event.preventDefault();
+            deleteActiveMappedFrame();
+            flashShortcutAction('Delete Frame', 'Removed');
+            return;
+          }
 
           if ((event.ctrlKey || event.metaKey) && key === "c") {
             event.preventDefault();
@@ -7360,6 +7696,7 @@
           if (key === 'z') keyboardZoomHeld = false;
           if (['d','m','v','c','x','z'].includes(key)) hideShortcutHUD();
           if (key.startsWith('arrow')) keyboardArrowHold = { key: "", start: 0, last: 0 };
+          if (!isAnyShortcutModeHeld()) hideShortcutHUD();
         };
 
         window.addEventListener("keydown", handleKeyDown, true);
@@ -7464,6 +7801,8 @@
       }
 
       function init() {
+        if (window.visualViewport) window.visualViewport.addEventListener("resize", pulseStatusInfluencePixel, { passive: true });
+        window.addEventListener("scroll", pulseStatusInfluencePixel, { passive: true });
         resizeCanvas();
         resizeLoader();
         setupControls();
