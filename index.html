@@ -1909,6 +1909,10 @@
             <button id="slideFeedButton" class="ghostButton">Slide Feed</button>
             <button id="frameLockButton" class="ghostButton lockFrameButton">Frame Lock Off</button>
           </div>
+          <div class="buttonGrid two">
+            <button id="makeBackgroundButton" class="ghostButton">Make Background</button>
+            <button id="mapFxButton" class="ghostButton">MapFX Off</button>
+          </div>
           <div class="mapHint" id="frameModeStatusText">Drag Frame moves the mapped box while the content orientation stays locked. Slide Feed pans/zooms the content inside the selected box. Frame Lock prevents accidental dragging/re-shaping.</div>
           <div class="sectionTitle" style="margin-top:14px;">Subject trace <span>capture frame to map</span></div>
           <div class="buttonGrid three">
@@ -1989,7 +1993,7 @@
             <button class="slotButton white" data-slot="6" type="button">7</button>
             <button class="slotButton black" data-slot="7" type="button">8</button>
           </div>
-          <div class="mapHint" id="mediaStatusText">Camera is active. Load photos, videos, or looping GIFs into the piano slots, then switch to a slot and map it. GIFs are held until loaded so the canvas does not accidentally render black placeholder frames.</div>
+          <div class="mapHint" id="mediaStatusText">Camera is active. Load photos, videos, or looping GIFs into the piano slots, then switch to a slot and map it. In Map mode the stage background stays black by default, and uploads appear as their own mapped boxes.</div>
 
           <div class="sectionTitle" style="margin-top:14px;">Source fit <span>zoom, pan, squish</span></div>
           <div class="buttonGrid four">
@@ -2302,6 +2306,9 @@
       let mediaRecorder = null;
       let recordedChunks = [];
       let recorderMime = "";
+      let mapBackgroundSource = null;
+      let mapFxMode = false;
+      const MAPFX_VISUAL_KEYS = new Set(["primaryEnabled","secondaryEnabled","primaryEffect","secondaryEffect","primaryMix","secondaryMix","intensity","glow","texture","bitrate","trail","edgeBoost","colorDrift"]);
 
       const canvas = document.getElementById("visualCanvas");
       const ctx = canvas.getContext("2d", { alpha: false });
@@ -2745,6 +2752,7 @@
       }
 
       function updateControlsFromSettings() {
+        if (mapFxMode && activeSourceMode === 'clone' && cameraCloneSlots[activeCloneSlot]) syncSettingsFromMapFxTarget();
         Object.entries(settings).forEach(([key, value]) => {
           const el = document.querySelector(`[data-setting="${key}"]`);
           if (!el) return;
@@ -2760,6 +2768,8 @@
         updateFrameFxControls();
         updateTouchFeedButton();
         updateFrameLockButton();
+        updateMapBackgroundButton();
+        updateMapFxButton();
         updateLiveCameraButton();
       }
 
@@ -3070,6 +3080,8 @@
       function getDefaultFrameVisualState() {
         return {
           enabled: false,
+          primaryEnabled: true,
+          secondaryEnabled: false,
           primaryEffect: "normal",
           secondaryEffect: "normal",
           primaryMix: 1,
@@ -3092,7 +3104,138 @@
       function ensureFrameVisualState(slot = getActiveFrameSlot()) {
         if (!slot) return null;
         if (!slot.visualState) slot.visualState = getDefaultFrameVisualState();
+        if (slot.visualState.primaryEnabled === undefined) slot.visualState.primaryEnabled = true;
+        if (slot.visualState.secondaryEnabled === undefined) slot.visualState.secondaryEnabled = false;
         return slot.visualState;
+      }
+
+      function isMapFxSetting(key) {
+        return MAPFX_VISUAL_KEYS.has(key);
+      }
+
+      function syncSettingsFromMapFxTarget() {
+        const slot = getActiveFrameSlot();
+        if (!mapFxMode || !slot) return;
+        const state = ensureFrameVisualState(slot);
+        settings.primaryEnabled = !!state.primaryEnabled;
+        settings.secondaryEnabled = !!state.secondaryEnabled;
+        settings.primaryEffect = state.primaryEffect || 'normal';
+        settings.secondaryEffect = state.secondaryEffect || 'normal';
+        settings.primaryMix = Number(state.primaryMix ?? 1);
+        settings.secondaryMix = Number(state.secondaryMix ?? 0);
+        settings.intensity = Number(state.intensity ?? 0.65);
+        settings.glow = Number(state.glow ?? 0.55);
+        settings.texture = Number(state.texture ?? 0.45);
+        settings.bitrate = Number(state.bitrate ?? 0.55);
+        settings.trail = Number(state.trail ?? 0.35);
+        settings.edgeBoost = Number(state.edgeBoost ?? 0.55);
+        settings.colorDrift = Number(state.colorDrift ?? 0.35);
+      }
+
+      function applyMapFxSetting(key, rawValue, pushHistory = true, livePreview = false) {
+        const slot = getActiveFrameSlot();
+        if (!mapFxMode || !slot || !isMapFxSetting(key)) return false;
+        if (pushHistory && !livePreview) pushMapHistory();
+        const state = ensureFrameVisualState(slot);
+        const value = typeof settings[key] === 'number' ? Number(rawValue) : rawValue;
+        state[key] = value;
+        if (key === 'primaryEffect' || key === 'secondaryEffect') state.enabled = true;
+        if (key === 'primaryEnabled' || key === 'secondaryEnabled') {
+          state.enabled = !!(state.primaryEnabled || state.secondaryEnabled);
+        } else if (state.primaryEnabled || state.secondaryEnabled) {
+          state.enabled = true;
+        }
+        settings[key] = value;
+        updateEffectToggleButtons();
+        updateFrameFxControls();
+        lastFrameTime = 0;
+        if (!livePreview) refreshMapView();
+        return true;
+      }
+
+      function getBackgroundSourceElement() {
+        if (!mapBackgroundSource) return null;
+        if (mapBackgroundSource.sourceType === 'slot') return getSlotMediaElement(mapBackgroundSource.sourceIndex);
+        if (mapBackgroundSource.sourceType === 'cameraDevice') {
+          if (!cameraLiveEnabled) return null;
+          if (mapBackgroundSource.sourceId === activeCameraDeviceId && video.readyState >= 2) return video;
+          const entry = cameraDeviceSources.get(mapBackgroundSource.sourceId);
+          if (entry?.video?.readyState >= 2) return entry.video;
+          startCameraDeviceElement(mapBackgroundSource.sourceId);
+          return video.readyState >= 2 ? video : null;
+        }
+        if (!cameraLiveEnabled) return null;
+        return (!demoMode && video.readyState >= 2) ? video : null;
+      }
+
+      function drawSourceCover(source, visualState = null) {
+        if (!source) return;
+        source = renderFrameVisualSource(source, visualState && visualState.enabled ? visualState : null);
+        const dims = sourceDimensions(source);
+        const sourceRatio = dims.w / Math.max(1, dims.h);
+        const canvasRatio = canvas.width / Math.max(1, canvas.height);
+        let dx = 0, dy = 0, dw = canvas.width, dh = canvas.height;
+        if (sourceRatio > canvasRatio) {
+          dh = canvas.height;
+          dw = dh * sourceRatio;
+          dx = (canvas.width - dw) / 2;
+        } else {
+          dw = canvas.width;
+          dh = dw / sourceRatio;
+          dy = (canvas.height - dh) / 2;
+        }
+        ctx.save();
+        ctx.globalAlpha = 1;
+        ctx.drawImage(source, dx, dy, dw, dh);
+        ctx.restore();
+      }
+
+      function updateMapBackgroundButton() {
+        const button = document.getElementById('makeBackgroundButton');
+        if (!button) return;
+        const slot = getActiveFrameSlot();
+        const isActiveBg = !!(slot && mapBackgroundSource && mapBackgroundSource.sourceType === slot.sourceType && (mapBackgroundSource.sourceIndex ?? null) === (slot.sourceIndex ?? null) && (mapBackgroundSource.sourceId || '') === (slot.sourceId || ''));
+        button.textContent = isActiveBg ? 'Background On' : 'Make Background';
+        button.classList.toggle('active', isActiveBg);
+      }
+
+      function updateMapFxButton() {
+        const button = document.getElementById('mapFxButton');
+        if (!button) return;
+        button.textContent = mapFxMode ? 'MapFX On' : 'MapFX Off';
+        button.classList.toggle('active', mapFxMode);
+      }
+
+      function toggleMapFxMode(force = null) {
+        mapFxMode = typeof force === 'boolean' ? force : !mapFxMode;
+        if (mapFxMode && getActiveFrameSlot()) syncSettingsFromMapFxTarget();
+        updateMapFxButton();
+        updateControlsFromSettings();
+        showToast(mapFxMode ? 'MapFX on. With Edit Off, tap any mapped box to make the main controls target that box.' : 'MapFX off. Main controls affect the overall app again.');
+      }
+
+      function toggleSelectedFrameBackground() {
+        const slot = getActiveFrameSlot();
+        if (!slot) {
+          showToast('Select a mapped frame first.');
+          return;
+        }
+        const already = mapBackgroundSource && mapBackgroundSource.sourceType === slot.sourceType && (mapBackgroundSource.sourceIndex ?? null) === (slot.sourceIndex ?? null) && (mapBackgroundSource.sourceId || '') === (slot.sourceId || '');
+        if (already) {
+          mapBackgroundSource = null;
+          showToast('Map background cleared back to black.');
+        } else {
+          mapBackgroundSource = {
+            sourceType: slot.sourceType || 'camera',
+            sourceIndex: slot.sourceIndex ?? null,
+            sourceId: slot.sourceId || '',
+            sourceLabel: slot.sourceLabel || '',
+            visualState: cloneDeep(slot.visualState || null)
+          };
+          showToast('Selected mapped frame promoted to the full background.');
+        }
+        updateMapBackgroundButton();
+        refreshMapView();
       }
 
       function getMaxCloneLayer() {
@@ -3195,7 +3338,7 @@
         if (secondary) secondary.value = state.secondaryEffect || "normal";
         if (status) {
           status.textContent = slot
-            ? `Frame ${activeCloneSlot + 1} visuals: ${state.enabled ? "ON" : "OFF"}. Primary ${state.primaryEffect || "normal"}, secondary ${state.secondaryEffect || "normal"}.`
+            ? `Frame ${activeCloneSlot + 1} visuals: ${state.enabled ? "ON" : "OFF"}. Primary ${state.primaryEffect || "normal"}, secondary ${state.secondaryEffect || "normal"}.${mapFxMode ? " MapFX is targeting this frame." : ""}`
             : "Select a mapped frame first. Frame FX stay off unless you assign them, which helps keep multiple frames responsive.";
         }
         updateFrameLayerControls();
@@ -3218,7 +3361,9 @@
         if (!slot) return showToast("Select a mapped frame first.");
         pushMapHistory();
         slot.visualState = {
-          enabled: true,
+          enabled: !!(settings.primaryEnabled || settings.secondaryEnabled),
+          primaryEnabled: !!settings.primaryEnabled,
+          secondaryEnabled: !!settings.secondaryEnabled,
           primaryEffect: settings.primaryEffect,
           secondaryEffect: settings.secondaryEffect,
           primaryMix: settings.primaryMix,
@@ -3472,11 +3617,14 @@
         activeCloneSlot = index;
         clearHiddenMediaElements();
         applyProjectionStatePayload(cameraCloneSlots[index].projectionState || getDefaultCloneProjection(index));
+        if (mapFxMode) syncSettingsFromMapFxTarget();
         updateMediaSlotButtons();
         updateCloneButtons();
         updateFrameFxControls();
         updateFrameLayerControls();
         updateFrameLockButton();
+        updateMapBackgroundButton();
+        updateMapFxButton();
         updateFrameModeStatus();
         showToast(`Editing mapped frame ${index + 1}.`);
       }
@@ -4315,6 +4463,11 @@
       }
 
       function applySetting(key, rawValue, pushHistory = true) {
+        if (applyMapFxSetting(key, rawValue, pushHistory, false)) {
+          updateControlsFromSettings();
+          updateMediaSlotButtons();
+          return;
+        }
         const old = JSON.stringify(settings);
         const numeric = typeof settings[key] === "number";
         settings[key] = numeric ? Number(rawValue) : rawValue;
@@ -4623,6 +4776,8 @@
         frameDragButton: ['Drag Frame', 'Sets touch interaction so dragging moves the mapped box while the content inside stays locked in orientation.'],
         slideFeedButton: ['Slide Feed', 'Sets touch interaction so dragging inside the selected mapped box pans the video/photo/live feed inside the frame instead of moving the frame itself.'],
         frameLockButton: ['Frame Lock', 'Locks the selected mapped frame in place so it cannot be dragged or reshaped accidentally. It uses its own purple color so you can recognize it quickly.'],
+        makeBackgroundButton: ['Make Background', 'Promotes the selected mapped box to the full background on the map stage. Tap it again on the same selection to return the background to solid black.'],
+        mapFxButton: ['MapFX', 'When MapFX is on and Edit is off, tap any mapped box on the screen and the main effect controls will target that box so you can quickly tune that isolated frame.'],
         traceSubjectButton: ['Trace Subject', 'Captures the active frame and detects the strongest subject-like region using edge, contrast, and color analysis. It then turns the result into an editable custom mapping shape.'],
         traceTightButton: ['Tight Trace', 'Runs a tighter subject trace for a closer fit around the detected subject. Useful when you need precision framing for projection.'],
         traceBoxButton: ['Box Trace', 'Creates a simpler rectangular detected-subject frame based on the dominant subject area.'],
@@ -4900,13 +5055,13 @@
       function offsetProjectionStateForDuplicate(state) {
         const next = cloneDeep(state || getDefaultCloneProjection(0));
         next.mapEnabled = true;
-        next.mapFrameX = clamp(Number(next.mapFrameX || 0.5) + 0.045, 0.07, 0.93);
-        next.mapFrameY = clamp(Number(next.mapFrameY || 0.5) + 0.045, 0.07, 0.93);
+        next.mapFrameX = clamp(Number(next.mapFrameX || 0.5) + 0.04, 0.07, 0.93);
+        next.mapFrameY = clamp(Number(next.mapFrameY || 0.5) - 0.06, 0.07, 0.93);
         if (Array.isArray(next.customPoints) && next.customPoints.length) {
           next.customPoints = next.customPoints.map(point => ({
             ...point,
-            x: clamp(Number(point.x || 0) + 0.045, 0, 1),
-            y: clamp(Number(point.y || 0) + 0.045, 0, 1)
+            x: clamp(Number(point.x || 0) + 0.04, 0, 1),
+            y: clamp(Number(point.y || 0) - 0.06, 0, 1)
           }));
         }
         return next;
@@ -4938,6 +5093,7 @@
         activateCameraClone(target);
         setTouchFeedMode(false, false);
         updateFrameLockButton();
+        updateMapBackgroundButton();
         refreshMapView();
         showToast(`Duplicated into mapped frame ${target + 1}.`);
       }
@@ -5003,7 +5159,9 @@
           el.addEventListener("input", () => {
             if (el.type === "range") {
               rememberRangeBefore(el);
-              settings[el.dataset.setting] = Number(el.value);
+              if (!applyMapFxSetting(el.dataset.setting, Number(el.value), false, true)) {
+                settings[el.dataset.setting] = Number(el.value);
+              }
               const readout = document.getElementById(`${el.id}Val`);
               if (readout) readout.textContent = formatValue(el.dataset.setting, Number(el.value));
             }
@@ -5073,6 +5231,8 @@
         document.getElementById("frameDragButton").addEventListener("click", () => setTouchFeedMode(false, true));
         document.getElementById("slideFeedButton").addEventListener("click", () => setTouchFeedMode(true, true));
         document.getElementById("frameLockButton").addEventListener("click", toggleActiveFrameLock);
+        document.getElementById("makeBackgroundButton").addEventListener("click", toggleSelectedFrameBackground);
+        document.getElementById("mapFxButton").addEventListener("click", () => toggleMapFxMode());
         document.getElementById("traceSubjectButton").addEventListener("click", () => traceDominantSubject("balanced"));
         document.getElementById("traceTightButton").addEventListener("click", () => traceDominantSubject("tight"));
         document.getElementById("traceBoxButton").addEventListener("click", () => traceDominantSubject("box"));
@@ -5464,17 +5624,25 @@
         frameCount++;
         updateAudio(now);
         const frame = prepareSourceFrame(now);
-        const bothOff = !settings.primaryEnabled && !settings.secondaryEnabled;
-        if (bothOff) {
-          drawNormalCamera(frame, 1);
+        if (settings.mapEnabled) {
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = '#000';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          const bgSource = getBackgroundSourceElement();
+          if (bgSource) drawSourceCover(bgSource, mapBackgroundSource?.visualState || null);
         } else {
-          drawBackgroundFade(frame);
-          drawCameraGhost(frame);
-          if (settings.primaryEnabled) drawEffect(settings.primaryEffect, frame, settings.primaryMix);
-          if (settings.secondaryEnabled) drawEffect(settings.secondaryEffect, frame, settings.secondaryMix);
-          drawVignette(frame);
+          const bothOff = !settings.primaryEnabled && !settings.secondaryEnabled;
+          if (bothOff) {
+            drawNormalCamera(frame, 1);
+          } else {
+            drawBackgroundFade(frame);
+            drawCameraGhost(frame);
+            if (settings.primaryEnabled) drawEffect(settings.primaryEffect, frame, settings.primaryMix);
+            if (settings.secondaryEnabled) drawEffect(settings.secondaryEffect, frame, settings.secondaryMix);
+            drawVignette(frame);
+          }
         }
-        if (settings.mapEnabled && activeSourceMode !== "clone") applyMapTransform();
         syncActiveProjectionState();
         renderCameraCloneLayers();
         renderMapOverlay();
@@ -5578,8 +5746,8 @@
 
         const primary = visualState.primaryEffect || "normal";
         const secondary = visualState.secondaryEffect || "normal";
-        const primaryMix = clamp(Number(visualState.primaryMix ?? 1));
-        const secondaryMix = clamp(Number(visualState.secondaryMix ?? 0));
+        const primaryMix = visualState.primaryEnabled === false ? 0 : clamp(Number(visualState.primaryMix ?? 1));
+        const secondaryMix = visualState.secondaryEnabled === false ? 0 : clamp(Number(visualState.secondaryMix ?? 0));
         const glow = clamp(Number(visualState.glow ?? 0.55));
         const intensity = clamp(Number(visualState.intensity ?? 0.65));
         const texture = clamp(Number(visualState.texture ?? 0.45));
@@ -6157,8 +6325,20 @@
 
       function setupMapInteractions() {
         mapCanvas.addEventListener('pointerdown', event => {
-          if (!mapEditorVisible) return;
+          if (!settings.mapEnabled) return;
           const point = getEventCanvasPoint(event);
+          if (!mapEditorVisible) {
+            if (mapFxMode) {
+              const hitFrame = findMappedFrameAtPoint(point);
+              if (hitFrame !== -1) {
+                activateCameraClone(hitFrame);
+                syncSettingsFromMapFxTarget();
+                updateControlsFromSettings();
+                showToast(`MapFX target: frame ${hitFrame + 1}. Adjust the main controls to affect this box.`);
+              }
+            }
+            return;
+          }
           mapPointerCache.set(event.pointerId, point);
           const tappedFrame = findMappedFrameAtPoint(point);
           if (tappedFrame === -1 && !isPointInsideMap(point)) {
@@ -6239,12 +6419,14 @@
             if (!mapDrag.historyPushed) { pushMapHistory(); mapDrag.historyPushed = true; }
             dragMapHandle(mapDrag.index, point);
             syncActiveProjectionState();
+            lastFrameTime = 0;
             renderMapOverlay();
           } else if (mapDrag.mode === 'move') {
             if (!mapDrag.historyPushed) { pushMapHistory(); mapDrag.historyPushed = true; }
             moveMapShape(dx, dy);
             syncActiveProjectionState();
             mapDrag.start = point;
+            lastFrameTime = 0;
             renderMapOverlay();
           } else if (mapDrag.mode === 'contentPan') {
             if (!mapDrag.historyPushed) { pushMapHistory(); mapDrag.historyPushed = true; }
@@ -6255,6 +6437,7 @@
             updateControlsFromSettings();
             syncActiveProjectionState();
             mapDrag.start = point;
+            lastFrameTime = 0;
             renderMapOverlay();
             showShortcutHUD("Touch Feed Pan", `X ${Number(settings.mapContentX).toFixed(2)} / Y ${Number(settings.mapContentY).toFixed(2)}`, (Number(settings.mapContentX) + 1) / 2, false);
           }
@@ -6796,9 +6979,10 @@
           el.textContent = "Frame Lock is on: the selected frame stays fixed in place. Turn Frame Lock off to drag or reshape it. You can still adjust content with buttons and keyboard controls.";
           return;
         }
+        const suffix = mapFxMode ? ' MapFX is on: with Edit Off, tap a box to make the main controls target that box.' : '';
         el.textContent = touchFeedMode
-          ? "Slide Feed is on: drag inside the selected mapped box to pan the video/photo/live feed inside it. Tap away to return to Drag Frame mode."
-          : "Drag Frame is on: drag the mapped box around while the content orientation stays locked. Tap the selected frame once to switch into Slide Feed.";
+          ? `Slide Feed is on: drag inside the selected mapped box to pan the video/photo/live feed inside it. Tap away to return to Drag Frame mode.${suffix}`
+          : `Drag Frame is on: drag the mapped box around while the content orientation stays locked. Tap the selected frame once to switch into Slide Feed.${suffix}`;
       }
 
       function updateTouchFeedButton() {
