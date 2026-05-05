@@ -1807,6 +1807,7 @@
           <button class="panelTab" data-panel="mapPanel">M Map</button>
           <button class="panelTab" data-panel="exportPanel">X Export</button>
           <button class="panelTab" data-panel="cameraPanel">C Camera</button>
+          <button class="panelTab" data-panel="demoPanel">D Demo</button>
         </div>
 
         <div id="effectsPanel" class="panelPage active">
@@ -1820,7 +1821,7 @@
             <button id="secondaryToggleButton" class="effectToggle on" type="button">Secondary On</button>
             <button id="normalQualityButton" class="effectToggle on" type="button">Normal Sharp</button>
           </div>
-          <div class="qualityBadge">Normal mode uses a sharp camera render by default. Tap Normal Sharp to switch to the lower-bitrate visual pipeline.</div>
+          <div class="qualityBadge">Normal mode uses a sharp camera render by default. The app now starts with a clean normal camera feed and effects off; tap Normal Sharp only if you want the lower-bitrate visual pipeline.</div>
 
           <div class="controlRow">
             <div><label for="primaryMix">Primary mix</label><small>Main visual strength.</small></div><span class="valueReadout" id="primaryMixVal"></span>
@@ -2084,6 +2085,26 @@
           </div>
           <p class="tinyNote">Use the main Start button for real camera/microphone input. Demo mode creates synthetic motion so the visuals still run without permissions.</p>
         </div>
+
+        <div id="demoPanel" class="panelPage">
+          <div class="sectionTitle">Demo visualizer <span>Shift+? opens panel · ` cycles modes</span></div>
+          <label for="demoVisualSelect">Demo visual mode</label>
+          <select id="demoVisualSelect" data-setting="demoVisual"></select>
+          <div class="qualityBadge">The original demo visual has been kept and now has four more curated visual modes. These controls affect the demo visualizer and the no-camera fallback background only.</div>
+          <div class="controlRow">
+            <div><label for="demoSpeed">Demo speed</label><small>Controls the motion pace of the demo visuals.</small></div><span class="valueReadout" id="demoSpeedVal"></span>
+            <input id="demoSpeed" type="range" min="0.2" max="2.2" step="0.01" data-setting="demoSpeed" />
+          </div>
+          <div class="controlRow">
+            <div><label for="demoHue">Demo hue</label><small>Shifts the main color family used by the demo modes.</small></div><span class="valueReadout" id="demoHueVal"></span>
+            <input id="demoHue" type="range" min="0" max="359" step="1" data-setting="demoHue" />
+          </div>
+          <div class="controlRow">
+            <div><label for="demoVariety">Color variety</label><small>Adds a wider spread of related hues and lively color accents into the motion.</small></div><span class="valueReadout" id="demoVarietyVal"></span>
+            <input id="demoVariety" type="range" min="0" max="1" step="0.01" data-setting="demoVariety" />
+          </div>
+          <p class="tinyNote">Keyboard: <strong>`</strong> cycles demo modes, <strong>Shift+`</strong> cycles backward. Hold <strong>,</strong>, <strong>.</strong>, or <strong>/</strong> and use the arrows to adjust demo speed, hue, and color variety.</p>
+        </div>
       </div>
     </div>
 
@@ -2166,6 +2187,12 @@
         <div class="keyCombo cat-map"><kbd>Frame FX</kbd></div><div>On-screen controls assign primary/secondary visual modes to the selected mapped frame.</div>
         <div class="keyCombo cat-map"><kbd>Normal</kbd></div><div>On-screen reset returns the app to a smooth normal camera view with effects off.</div>
 
+        <div class="keyGroup cat-camera">Demo visualizer</div>
+        <div class="keyCombo cat-camera"><kbd>Shift</kbd> + <kbd>?</kbd></div><div>Open the Demo panel in the controls window.</div>
+        <div class="keyCombo cat-camera"><kbd>`</kbd></div><div>Cycle through the five demo visual modes. <kbd>Shift</kbd> + <kbd>`</kbd> cycles backward.</div>
+        <div class="keyCombo cat-camera"><kbd>,</kbd>/<kbd>.</kbd>/<kbd>/</kbd></div><div>Select Demo Speed, Demo Hue, or Demo Variety for live keyboard adjustment.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold selected demo key</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Adjust the demo visual motion speed, color family, or extra color variety in real time.</div>
+
         <div class="keyGroup cat-capture">Capture</div>
         <div class="keyCombo cat-capture"><kbd>R</kbd></div><div>Start / stop recording.</div>
         <div class="keyCombo cat-capture"><kbd>S</kbd></div><div>Save a PNG snapshot.</div>
@@ -2241,28 +2268,54 @@
         " ": ["00000","00000","00000","00000","00000","00000","00000"]
       };
 
+      const DEMO_VISUALS = [
+        { id: "orbitalBloom", name: "Orbital Bloom (Original)" },
+        { id: "particleBloom", name: "Airy Particle Bloom" },
+        { id: "ribbonNebula", name: "Ribbon Nebula" },
+        { id: "bitStorm", name: "Bit Storm" },
+        { id: "haloGarden", name: "Halo Garden" }
+      ];
+
+      const EFFECT_PRESETS = Object.freeze({
+        normal: { primaryMix: 1, secondaryMix: 0.34, intensity: 0.68, glow: 0.14, texture: 0.10, bitrate: 1, trail: 0.08, edgeBoost: 0.18, colorDrift: 0.06, feedback: 0.04, cameraAlpha: 0.0 },
+        tealBits: { primaryMix: 0.94, secondaryMix: 0.42, intensity: 0.78, glow: 0.76, texture: 0.58, bitrate: 0.86, trail: 0.42, edgeBoost: 0.52, colorDrift: 0.30, feedback: 0.12, cameraAlpha: 0.03 },
+        edgeTrails: { primaryMix: 0.90, secondaryMix: 0.48, intensity: 0.82, glow: 0.66, texture: 0.34, bitrate: 0.92, trail: 0.74, edgeBoost: 0.88, colorDrift: 0.24, feedback: 0.10, cameraAlpha: 0.04 },
+        auroraWash: { primaryMix: 0.84, secondaryMix: 0.36, intensity: 0.80, glow: 0.88, texture: 0.28, bitrate: 0.94, trail: 0.46, edgeBoost: 0.34, colorDrift: 0.54, feedback: 0.22, cameraAlpha: 0.08 },
+        prismGhost: { primaryMix: 0.86, secondaryMix: 0.44, intensity: 0.82, glow: 0.72, texture: 0.36, bitrate: 0.90, trail: 0.56, edgeBoost: 0.48, colorDrift: 0.62, feedback: 0.18, cameraAlpha: 0.06 },
+        chromaticVapor: { primaryMix: 0.88, secondaryMix: 0.42, intensity: 0.86, glow: 0.82, texture: 0.42, bitrate: 0.88, trail: 0.60, edgeBoost: 0.42, colorDrift: 0.72, feedback: 0.16, cameraAlpha: 0.04 },
+        plasmaScan: { primaryMix: 0.90, secondaryMix: 0.38, intensity: 0.88, glow: 0.54, texture: 0.50, bitrate: 0.94, trail: 0.48, edgeBoost: 0.70, colorDrift: 0.28, feedback: 0.08, cameraAlpha: 0.04 },
+        constellation: { primaryMix: 0.84, secondaryMix: 0.38, intensity: 0.74, glow: 0.70, texture: 0.62, bitrate: 0.82, trail: 0.34, edgeBoost: 0.46, colorDrift: 0.40, feedback: 0.10, cameraAlpha: 0.03 },
+        gridMelt: { primaryMix: 0.86, secondaryMix: 0.40, intensity: 0.80, glow: 0.62, texture: 0.64, bitrate: 0.86, trail: 0.52, edgeBoost: 0.44, colorDrift: 0.34, feedback: 0.14, cameraAlpha: 0.04 },
+        solarDream: { primaryMix: 0.88, secondaryMix: 0.44, intensity: 0.84, glow: 0.74, texture: 0.44, bitrate: 0.90, trail: 0.50, edgeBoost: 0.38, colorDrift: 0.70, feedback: 0.18, cameraAlpha: 0.05 },
+        echoGlass: { primaryMix: 0.82, secondaryMix: 0.50, intensity: 0.76, glow: 0.68, texture: 0.30, bitrate: 0.94, trail: 0.42, edgeBoost: 0.54, colorDrift: 0.44, feedback: 0.28, cameraAlpha: 0.06 }
+      });
+
       const defaultSettings = Object.freeze({
         primaryEffect: "tealBits",
         secondaryEffect: "edgeTrails",
-        primaryEnabled: true,
-        secondaryEnabled: true,
+        primaryEnabled: false,
+        secondaryEnabled: false,
         normalSharp: true,
-        primaryMix: 1,
-        secondaryMix: 0.62,
-        intensity: 0.82,
+        primaryMix: 0.94,
+        secondaryMix: 0.42,
+        intensity: 0.78,
         audioSensitivity: 0.92,
-        glow: 0.74,
+        glow: 0.76,
         texture: 0.58,
-        bitrate: 0.64,
-        trail: 0.66,
-        edgeBoost: 0.72,
-        colorDrift: 0.45,
-        feedback: 0.24,
-        zoom: 0.2,
+        bitrate: 1,
+        trail: 0.42,
+        edgeBoost: 0.52,
+        colorDrift: 0.30,
+        feedback: 0.12,
+        zoom: 0.12,
         sourceZoom: 1,
         sourcePanX: 0,
         sourcePanY: 0,
-        cameraAlpha: 0.06,
+        cameraAlpha: 0,
+        demoVisual: "orbitalBloom",
+        demoSpeed: 1,
+        demoHue: 182,
+        demoVariety: 0.46,
         mapEnabled: false,
         mapShape: "rectangle",
         mapMode: "mask",
@@ -2275,8 +2328,8 @@
         mapContentY: 0,
         mapContentScaleX: 1,
         mapContentScaleY: 1,
-        exportBitrate: 8,
-        fps: 30
+        exportBitrate: 12,
+        fps: 60
       });
 
       let settings = { ...defaultSettings };
@@ -2375,7 +2428,10 @@
         j: "zoom",
         y: "cameraAlpha",
         ";": "exportBitrate",
-        "'": "fps"
+        "'": "fps",
+        ",": "demoSpeed",
+        ".": "demoHue",
+        "/": "demoVariety"
       };
 
       const sliderShortcutNames = {
@@ -2393,7 +2449,10 @@
         zoom: "Zoom Warp",
         cameraAlpha: "Camera Ghost",
         exportBitrate: "Export Bitrate",
-        fps: "FPS"
+        fps: "FPS",
+        demoSpeed: "Demo Speed",
+        demoHue: "Demo Hue",
+        demoVariety: "Demo Variety"
       };
       const scratchCtx = scratchCanvas.getContext("2d", { willReadFrequently: true });
       const loaderCanvas = document.getElementById("loaderCanvas");
@@ -2746,6 +2805,46 @@
         });
       }
 
+      function populateDemoVisuals() {
+        const select = document.getElementById("demoVisualSelect");
+        if (!select) return;
+        select.innerHTML = "";
+        DEMO_VISUALS.forEach(mode => select.add(new Option(mode.name, mode.id)));
+      }
+
+      function effectLabel(effectId) {
+        const match = EFFECTS.find(effect => effect.id === effectId);
+        return match ? match.name : effectId;
+      }
+
+      function demoModeLabel(modeId) {
+        const match = DEMO_VISUALS.find(mode => mode.id === modeId);
+        return match ? match.name : modeId;
+      }
+
+      function buildEffectPreset(effectId, layer = "primary") {
+        const base = EFFECT_PRESETS[effectId] || EFFECT_PRESETS.tealBits;
+        const preset = { ...base };
+        if (layer === "primary") {
+          preset.primaryEffect = effectId;
+          preset.primaryEnabled = true;
+          if (typeof base.primaryMix === 'number') preset.primaryMix = base.primaryMix;
+        } else {
+          preset.secondaryEffect = effectId;
+          preset.secondaryEnabled = true;
+          if (typeof base.secondaryMix === 'number') preset.secondaryMix = base.secondaryMix;
+        }
+        return preset;
+      }
+
+      function cycleDemoVisual(step = 1) {
+        const index = Math.max(0, DEMO_VISUALS.findIndex(mode => mode.id === settings.demoVisual));
+        const next = DEMO_VISUALS[(index + step + DEMO_VISUALS.length) % DEMO_VISUALS.length];
+        applySetting('demoVisual', next.id);
+        showShortcutHUD('Demo Visual', next.name, null, true);
+        showToast(`Demo visual: ${next.name}.`);
+      }
+
       function showToast(message) {
         toast.textContent = message;
         toast.classList.add("show");
@@ -2923,7 +3022,7 @@
       }
 
       function videoConstraintsForCameraChoice(deviceId) {
-        const base = { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 60 } };
+        const base = { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60, max: 60 } };
         if (deviceId === "__user") return { ...base, facingMode: { ideal: "user" } };
         if (deviceId === "__environment" || !deviceId) return { ...base, facingMode: { ideal: "environment" } };
         return { ...base, deviceId: { exact: deviceId } };
@@ -3112,7 +3211,7 @@
         if (activeFrame && activeFrame.sourceType === "slot" && slot) {
           el.textContent = `Mapped media frame ${activeCloneSlot + 1}: slot ${mappedSlotIndex + 1} — ${slot.name}. It is isolated inside its frame and will not replace the full background.`;
         } else if (activeSourceMode === "camera") {
-          el.textContent = "Camera is active. Load photos, videos, or looping GIFs into the piano slots; selecting a slot now creates an isolated mapped frame.";
+          el.textContent = "Camera is active in a clean normal view by default. Load photos, videos, or looping GIFs into the piano slots; selecting a slot now creates an isolated mapped frame.";
         } else if (activeFrame) {
           el.textContent = `Mapped frame ${activeCloneSlot + 1} is active for editing.`;
         } else if (slot) {
@@ -4627,6 +4726,8 @@
       function formatValue(key, value) {
         if (key === "fps") return `${Math.round(value)}`;
         if (key === "exportBitrate") return `${value.toFixed(1)}M`;
+        if (key === "demoSpeed") return `${value.toFixed(2)}x`;
+        if (key === "demoHue") return `${Math.round(value)}°`;
         if (key === "mapContentX" || key === "mapContentY" || key === "sourcePanX" || key === "sourcePanY") return `${value >= 0 ? "+" : ""}${value.toFixed(2)}`;
         if (key === "mapContentZoom" || key === "mapContentScaleX" || key === "mapContentScaleY" || key === "sourceZoom") return `${value.toFixed(2)}x`;
         return `${Math.round(value * 100)}%`;
@@ -4639,6 +4740,18 @@
           return;
         }
         const old = JSON.stringify(settings);
+        if (key === 'primaryEffect' || key === 'secondaryEffect') {
+          const layer = key === 'primaryEffect' ? 'primary' : 'secondary';
+          settings = { ...settings, ...buildEffectPreset(String(rawValue), layer) };
+          if (pushHistory && old !== JSON.stringify(settings) && !isApplyingHistory) {
+            undoStack.push(JSON.parse(old));
+            undoStack = undoStack.slice(-80);
+            redoStack.length = 0;
+          }
+          updateControlsFromSettings();
+          updateMediaSlotButtons();
+          return;
+        }
         const numeric = typeof settings[key] === "number";
         settings[key] = numeric ? Number(rawValue) : rawValue;
         if (pushHistory && old !== JSON.stringify(settings) && !isApplyingHistory) {
@@ -4662,7 +4775,7 @@
         if (!EFFECTS.some(e => e.id === cleaned.secondaryEffect)) cleaned.secondaryEffect = defaultSettings.secondaryEffect;
         if (pushHistory && !isApplyingHistory) undoStack.push({ ...settings });
         settings = cleaned;
-        document.querySelectorAll("input[type='range'], input[type='color'], button").forEach(control => {
+        document.querySelectorAll("input[type='range'], input[type='color'], button, select").forEach(control => {
           control.addEventListener("change", () => setTimeout(() => releaseKeyboardFocus(false), 30));
           control.addEventListener("click", () => setTimeout(() => releaseKeyboardFocus(false), 60));
         });
@@ -5304,6 +5417,7 @@
 
       function setupControls() {
         populateEffects();
+        populateDemoVisuals();
         updateControlsFromSettings();
 
         function rememberRangeBefore(el) {
@@ -5349,6 +5463,15 @@
 
         document.querySelectorAll(".panelTab").forEach(tab => {
           tab.addEventListener("click", () => showPanel(tab.dataset.panel));
+        });
+
+        ["primarySelect", "secondarySelect", "framePrimarySelect", "frameSecondarySelect", "cameraDeviceSelect", "demoVisualSelect"].forEach(id => {
+          const select = document.getElementById(id);
+          if (!select) return;
+          ["pointerdown", "mousedown", "touchstart", "click"].forEach(type => {
+            select.addEventListener(type, event => event.stopPropagation(), true);
+          });
+          select.addEventListener("change", () => setTimeout(() => releaseKeyboardFocus(false), 160));
         });
 
         document.getElementById("collapseButton").addEventListener("click", toggleControls);
@@ -5624,6 +5747,14 @@
               autoGainControl: false
             }
           });
+          const videoTrack = mediaStream.getVideoTracks()[0];
+          if (videoTrack && videoTrack.applyConstraints) {
+            try {
+              await videoTrack.applyConstraints({ width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60, max: 60 } });
+            } catch (error) {
+              console.warn('High-quality video constraints were limited by the device/browser.', error);
+            }
+          }
           video.srcObject = mediaStream;
           await video.play();
           await setupAudio(mediaStream);
@@ -5784,24 +5915,166 @@
       }
 
       function drawDemoSource(c, w, h, now) {
-        const t = nowSeconds(now);
+        const mode = settings.demoVisual || 'orbitalBloom';
+        const speed = clamp(Number(settings.demoSpeed || 1), 0.2, 2.2);
+        const hueBase = ((Number(settings.demoHue || 182) % 360) + 360) % 360;
+        const variety = clamp(Number(settings.demoVariety || 0.46), 0, 1);
+        const t = nowSeconds(now) * speed;
         c.fillStyle = "#050707";
         c.fillRect(0, 0, w, h);
-        const grad = c.createRadialGradient(w * 0.5, h * 0.5, 2, w * 0.5, h * 0.5, Math.max(w, h) * 0.68);
-        grad.addColorStop(0, `hsla(${175 + Math.sin(t) * 24}, 100%, 58%, 0.62)`);
-        grad.addColorStop(0.48, `hsla(${210 + Math.cos(t * 0.7) * 34}, 90%, 40%, 0.26)`);
-        grad.addColorStop(1, "rgba(0,0,0,0.96)");
-        c.fillStyle = grad;
-        c.fillRect(0, 0, w, h);
+
+        const fillBackdrop = (innerHue, outerHue, innerAlpha = 0.62, outerAlpha = 0.26) => {
+          const grad = c.createRadialGradient(w * 0.5, h * 0.5, 2, w * 0.5, h * 0.5, Math.max(w, h) * 0.72);
+          grad.addColorStop(0, `hsla(${innerHue}, 100%, 58%, ${innerAlpha})`);
+          grad.addColorStop(0.48, `hsla(${outerHue}, 90%, 40%, ${outerAlpha})`);
+          grad.addColorStop(1, "rgba(0,0,0,0.96)");
+          c.fillStyle = grad;
+          c.fillRect(0, 0, w, h);
+        };
+
+        const hueSpread = 18 + variety * 120;
+        const accent = shift => (hueBase + shift + Math.sin(t * 0.7 + shift) * hueSpread * 0.18 + 360) % 360;
+
+        if (mode === 'particleBloom') {
+          fillBackdrop(accent(0), accent(72), 0.52, 0.22);
+          c.globalCompositeOperation = 'lighter';
+          for (let i = 0; i < 90; i++) {
+            const orbit = 0.12 + (i / 90) * 0.44;
+            const angle = t * (0.12 + i * 0.004) + i * 0.87;
+            const x = w * (0.5 + Math.cos(angle) * orbit + Math.sin(t * 0.7 + i) * 0.02);
+            const y = h * (0.5 + Math.sin(angle * 1.14) * orbit * 0.9 + Math.cos(t * 0.42 + i) * 0.02);
+            const size = Math.max(1.2, Math.min(w, h) * (0.003 + (i % 8) * 0.0009 + variety * 0.0012));
+            const alpha = 0.18 + (i % 7) * 0.015 + variety * 0.12;
+            const hue = accent(i * 5);
+            c.fillStyle = `hsla(${hue}, 100%, ${60 + (i % 5) * 6}%, ${alpha})`;
+            c.shadowColor = `hsla(${hue}, 100%, 60%, ${Math.min(0.72, alpha + 0.18)})`;
+            c.shadowBlur = 6 + variety * 18;
+            c.beginPath();
+            c.arc(x, y, size, 0, Math.PI * 2);
+            c.fill();
+          }
+          c.globalCompositeOperation = 'screen';
+          c.lineWidth = 1;
+          for (let i = 0; i < 24; i++) {
+            const ax = w * (0.5 + Math.sin(t * (0.25 + i * 0.01) + i) * 0.34);
+            const ay = h * (0.5 + Math.cos(t * (0.22 + i * 0.008) + i * 2) * 0.24);
+            const bx = w * (0.5 + Math.cos(t * (0.28 + i * 0.012) + i * 3) * 0.28);
+            const by = h * (0.5 + Math.sin(t * (0.21 + i * 0.01) + i) * 0.34);
+            c.strokeStyle = `hsla(${accent(i * 9)}, 100%, 70%, ${0.06 + variety * 0.08})`;
+            c.beginPath();
+            c.moveTo(ax, ay);
+            c.lineTo(bx, by);
+            c.stroke();
+          }
+          c.globalCompositeOperation = 'source-over';
+          return;
+        }
+
+        if (mode === 'ribbonNebula') {
+          fillBackdrop(accent(16), accent(132), 0.46, 0.24);
+          c.globalCompositeOperation = 'screen';
+          c.lineCap = 'round';
+          for (let band = 0; band < 6; band++) {
+            c.beginPath();
+            for (let x = -w * 0.08; x <= w * 1.08; x += Math.max(8, Math.floor(w / 36))) {
+              const n = x / w;
+              const wave = Math.sin(n * 8 + t * (0.42 + band * 0.08) + band) * h * (0.06 + band * 0.008);
+              const wave2 = Math.cos(n * 6 + t * (0.31 + band * 0.05) + band * 3) * h * 0.035;
+              const y = h * (0.24 + band * 0.11) + wave + wave2;
+              if (x <= 0) c.moveTo(x, y);
+              else c.lineTo(x, y);
+            }
+            c.strokeStyle = `hsla(${accent(band * 42)}, 100%, ${56 + band * 4}%, ${0.10 + band * 0.03 + variety * 0.08})`;
+            c.lineWidth = Math.max(2, Math.min(w, h) * (0.008 + band * 0.002));
+            c.shadowColor = `hsla(${accent(band * 42)}, 100%, 60%, 0.24)`;
+            c.shadowBlur = 12 + band * 6;
+            c.stroke();
+          }
+          c.globalCompositeOperation = 'lighter';
+          for (let i = 0; i < 50; i++) {
+            const px = (i / 49) * w;
+            const py = h * (0.52 + Math.sin(px / w * 9 + t * 0.9 + i) * 0.22);
+            const hue = accent(i * 7 + 120);
+            c.fillStyle = `hsla(${hue}, 100%, 68%, ${0.05 + variety * 0.08})`;
+            c.fillRect(px, py, 2 + variety * 2, 2 + variety * 2);
+          }
+          c.globalCompositeOperation = 'source-over';
+          return;
+        }
+
+        if (mode === 'bitStorm') {
+          fillBackdrop(accent(-12), accent(96), 0.42, 0.20);
+          c.globalCompositeOperation = 'lighter';
+          const cols = Math.max(14, Math.floor(w / 26));
+          for (let col = 0; col < cols; col++) {
+            const x = (col / cols) * w;
+            const speedMul = 0.35 + (col % 7) * 0.05 + variety * 0.25;
+            for (let row = 0; row < 18; row++) {
+              const yy = ((t * 120 * speedMul + row * h * 0.08 + col * 12) % (h * 1.22)) - h * 0.1;
+              const size = 2 + (row % 3) + variety * 1.2;
+              const hue = accent(col * 6 + row * 10);
+              c.fillStyle = `hsla(${hue}, 100%, ${52 + (row % 5) * 7}%, ${0.14 + row * 0.01})`;
+              c.shadowColor = `hsla(${hue}, 100%, 58%, 0.32)`;
+              c.shadowBlur = 8 + variety * 12;
+              c.fillRect(x + Math.sin(row + t + col) * 10, yy, size, size * (1.4 + (col % 3) * 0.2));
+            }
+          }
+          c.globalCompositeOperation = 'screen';
+          c.strokeStyle = `hsla(${accent(48)}, 100%, 72%, ${0.10 + variety * 0.08})`;
+          for (let x = 0; x < w; x += Math.max(8, Math.floor(w / 32))) {
+            c.beginPath();
+            c.moveTo(x, 0);
+            c.lineTo(x + Math.sin(t + x * 0.04) * 12, h);
+            c.stroke();
+          }
+          c.globalCompositeOperation = 'source-over';
+          return;
+        }
+
+        if (mode === 'haloGarden') {
+          fillBackdrop(accent(24), accent(164), 0.56, 0.20);
+          c.globalCompositeOperation = 'screen';
+          for (let i = 0; i < 12; i++) {
+            const orbit = 0.18 + i * 0.028;
+            const cx = w * (0.5 + Math.cos(t * (0.22 + i * 0.02) + i * 1.7) * orbit);
+            const cy = h * (0.5 + Math.sin(t * (0.18 + i * 0.02) + i) * orbit * 0.7);
+            const radius = Math.min(w, h) * (0.05 + i * 0.012 + variety * 0.02);
+            const hue = accent(i * 28);
+            c.strokeStyle = `hsla(${hue}, 100%, ${58 + i * 2}%, ${0.10 + i * 0.015})`;
+            c.lineWidth = 1.2 + i * 0.24;
+            c.shadowColor = `hsla(${hue}, 100%, 62%, 0.3)`;
+            c.shadowBlur = 8 + i * 2;
+            c.beginPath();
+            c.arc(cx, cy, radius, 0, Math.PI * 2);
+            c.stroke();
+          }
+          c.globalCompositeOperation = 'lighter';
+          for (let i = 0; i < 80; i++) {
+            const angle = i * 2.399963 + t * 0.35;
+            const radius = Math.sqrt(i / 80) * Math.min(w, h) * 0.42;
+            const x = w * 0.5 + Math.cos(angle) * radius;
+            const y = h * 0.5 + Math.sin(angle) * radius * 0.72;
+            const hue = accent(i * 4 + 90);
+            c.fillStyle = `hsla(${hue}, 100%, ${62 + (i % 6) * 4}%, ${0.18 + variety * 0.10})`;
+            c.beginPath();
+            c.arc(x, y, 1.8 + (i % 5) * 0.35, 0, Math.PI * 2);
+            c.fill();
+          }
+          c.globalCompositeOperation = 'source-over';
+          return;
+        }
+
+        // original visual preserved as the default mode
+        fillBackdrop(175 + Math.sin(t) * 24 + variety * 12, 210 + Math.cos(t * 0.7) * 34 + variety * 18, 0.62, 0.26);
         for (let i = 0; i < 7; i++) {
           const x = w * (0.5 + Math.sin(t * (0.55 + i * 0.07) + i) * (0.2 + i * 0.012));
           const y = h * (0.5 + Math.cos(t * (0.42 + i * 0.06) + i * 2) * (0.18 + i * 0.015));
           c.beginPath();
-          c.fillStyle = `hsla(${(165 + i * 34 + t * 32) % 360}, 100%, ${55 + i * 3}%, ${0.22 + i * 0.035})`;
+          c.fillStyle = `hsla(${(hueBase + i * (22 + variety * 20) + t * (32 + variety * 10)) % 360}, 100%, ${55 + i * 3}%, ${0.22 + i * 0.035})`;
           c.arc(x, y, Math.min(w, h) * (0.08 + i * 0.014), 0, Math.PI * 2);
           c.fill();
         }
-        c.strokeStyle = "rgba(255,255,255,0.12)";
+        c.strokeStyle = `hsla(${(hueBase + 20) % 360}, 100%, 88%, 0.12)`;
         c.lineWidth = 1;
         for (let x = 0; x < w; x += Math.max(5, Math.floor(w / 24))) {
           c.beginPath();
@@ -7469,6 +7742,10 @@
       function handleShiftShortcut(key, event) {
         if (!event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return false;
         switch (key) {
+          case '?':
+            showPanel('demoPanel');
+            flashShortcutAction('Demo Panel', 'Open');
+            return true;
           case 'l':
             toggleLiveCameras();
             flashShortcutAction('Live Cams', cameraLiveEnabled ? 'On' : 'Off');
@@ -7622,6 +7899,12 @@
           if (key === 'c' && event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
             event.preventDefault();
             cycleDeviceCamera();
+            return;
+          }
+
+          if (event.code === 'Backquote' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            event.preventDefault();
+            cycleDemoVisual(event.shiftKey ? -1 : 1);
             return;
           }
 
