@@ -2090,7 +2090,11 @@
           <div class="sectionTitle">Demo visualizer <span>Shift+? opens panel · ` cycles modes</span></div>
           <label for="demoVisualSelect">Demo visual mode</label>
           <select id="demoVisualSelect" data-setting="demoVisual"></select>
-          <div class="qualityBadge">The original demo visual has been kept and now has four more curated visual modes. These controls affect the demo visualizer and the no-camera fallback background only.</div>
+          <div class="toggleRow" aria-label="Demo visual layer switches">
+            <button id="demoLayerToggleButton" class="effectToggle off" type="button">Demo Layer Off</button>
+            <button id="demoSoloButton" class="effectToggle off" type="button">Demo Solo</button>
+          </div>
+          <div class="qualityBadge">The original demo visual has been kept and now has four more curated visual modes. Turn Demo Layer on to use these visuals as an adjustable filler/overlay behind or with the live camera, mapped frames, and effects.</div>
           <div class="controlRow">
             <div><label for="demoSpeed">Demo speed</label><small>Controls the motion pace of the demo visuals.</small></div><span class="valueReadout" id="demoSpeedVal"></span>
             <input id="demoSpeed" type="range" min="0.2" max="2.2" step="0.01" data-setting="demoSpeed" />
@@ -2103,7 +2107,11 @@
             <div><label for="demoVariety">Color variety</label><small>Adds a wider spread of related hues and lively color accents into the motion.</small></div><span class="valueReadout" id="demoVarietyVal"></span>
             <input id="demoVariety" type="range" min="0" max="1" step="0.01" data-setting="demoVariety" />
           </div>
-          <p class="tinyNote">Keyboard: <strong>`</strong> cycles demo modes, <strong>Shift+`</strong> cycles backward. Hold <strong>,</strong>, <strong>.</strong>, or <strong>/</strong> and use the arrows to adjust demo speed, hue, and color variety.</p>
+          <div class="controlRow">
+            <div><label for="demoOpacity">Demo opacity</label><small>How strongly the demo filler/overlay blends with the camera, effects, and mapped frames.</small></div><span class="valueReadout" id="demoOpacityVal"></span>
+            <input id="demoOpacity" type="range" min="0" max="1" step="0.01" data-setting="demoOpacity" />
+          </div>
+          <p class="tinyNote">Keyboard: <strong>`</strong> cycles demo modes, <strong>Shift+`</strong> cycles backward, <strong>Shift+Y</strong> toggles the demo layer, and <strong>Shift+P</strong> toggles demo solo. Hold <strong>,</strong>, <strong>.</strong>, <strong>/</strong>, or <strong>-</strong> with arrows to adjust speed, hue, variety, or opacity.</p>
         </div>
       </div>
     </div>
@@ -2150,6 +2158,8 @@
         <div class="keyCombo cat-camera"><kbd>Hold slider key</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Adjust that setting. Add <kbd>Shift</kbd> for larger changes. The bottom HUD now clears on key release and has a fallback auto-hide.</div>
 
         <div class="keyGroup cat-map">Projection mapping</div>
+        <div class="keyCombo cat-map"><kbd>Priority</kbd></div><div><strong>Shortcut priority rule:</strong> when a mapped frame is selected or available, frame-editing shortcuts win; outside mapping, panel/global shortcuts win.</div>
+        <div class="keyCombo cat-map"><kbd>Auto context</kbd></div><div>When a mapped frame exists, Z/C/X/D/M/O/Delete/Arrows automatically target the selected frame instead of forcing you to reopen Map mode.</div>
         <div class="keyCombo cat-map"><kbd>A</kbd></div><div>Open the Map panel and snap into keyboard mapping mode.</div>
         <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>A</kbd></div><div>Trace the dominant subject, switch to Warp, turn keyboard point editing on, then use arrows / D+arrows / O / Delete.</div>
         <div class="keyCombo cat-map"><kbd>Shift</kbd> + <kbd>L</kbd></div><div>Live cameras on / off while keeping mapped media boxes visible.</div>
@@ -2189,9 +2199,12 @@
 
         <div class="keyGroup cat-camera">Demo visualizer</div>
         <div class="keyCombo cat-camera"><kbd>Shift</kbd> + <kbd>?</kbd></div><div>Open the Demo panel in the controls window.</div>
+        <div class="keyCombo cat-camera"><kbd>Shift</kbd> + <kbd>Y</kbd></div><div>Turn the demo visual layer on/off as a blendable filler with camera, effects, and mapped frames.</div>
+        <div class="keyCombo cat-camera"><kbd>Shift</kbd> + <kbd>P</kbd></div><div>Demo Solo on/off, using only the selected animated demo visual.</div>
         <div class="keyCombo cat-camera"><kbd>`</kbd></div><div>Cycle through the five demo visual modes. <kbd>Shift</kbd> + <kbd>`</kbd> cycles backward.</div>
         <div class="keyCombo cat-camera"><kbd>,</kbd>/<kbd>.</kbd>/<kbd>/</kbd></div><div>Select Demo Speed, Demo Hue, or Demo Variety for live keyboard adjustment.</div>
-        <div class="keyCombo cat-camera"><kbd>Hold selected demo key</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Adjust the demo visual motion speed, color family, or extra color variety in real time.</div>
+        <div class="keyCombo cat-camera"><kbd>-</kbd></div><div>Select Demo Opacity for keyboard adjustment. Hold it and use ←/→.</div>
+        <div class="keyCombo cat-camera"><kbd>Hold selected demo key</kbd> + <kbd>←</kbd>/<kbd>→</kbd></div><div>Adjust demo motion speed, hue, variety, or opacity in real time.</div>
 
         <div class="keyGroup cat-capture">Capture</div>
         <div class="keyCombo cat-capture"><kbd>R</kbd></div><div>Start / stop recording.</div>
@@ -2313,9 +2326,12 @@
         sourcePanY: 0,
         cameraAlpha: 0,
         demoVisual: "orbitalBloom",
+        demoLayerEnabled: false,
+        demoSolo: false,
         demoSpeed: 1,
         demoHue: 182,
         demoVariety: 0.46,
+        demoOpacity: 0.44,
         mapEnabled: false,
         mapShape: "rectangle",
         mapMode: "mask",
@@ -2353,6 +2369,8 @@
       let keyboardMapSquishHeld = false;
       let keyboardZoomHeld = false;
       let keyboardArrowHold = { key: "", start: 0, last: 0 };
+      let keyboardIntentContext = "global";
+      let frameFxAutoTarget = true;
       let smoothSettingTweens = {};
       let activeShortcutSetting = null;
       let activeShortcutKey = null;
@@ -2412,6 +2430,8 @@
       const frameFxWorkCtx = frameFxWorkCanvas.getContext("2d", { willReadFrequently: true });
       const warpSourceCanvas = document.createElement("canvas");
       const warpSourceCtx = warpSourceCanvas.getContext("2d", { willReadFrequently: false });
+      const demoLayerCanvas = document.createElement("canvas");
+      const demoLayerCtx = demoLayerCanvas.getContext("2d", { willReadFrequently: false });
 
       const sliderShortcutMap = {
         q: "primaryMix",
@@ -2431,7 +2451,8 @@
         "'": "fps",
         ",": "demoSpeed",
         ".": "demoHue",
-        "/": "demoVariety"
+        "/": "demoVariety",
+        "-": "demoOpacity"
       };
 
       const sliderShortcutNames = {
@@ -2452,7 +2473,8 @@
         fps: "FPS",
         demoSpeed: "Demo Speed",
         demoHue: "Demo Hue",
-        demoVariety: "Demo Variety"
+        demoVariety: "Demo Variety",
+        demoOpacity: "Demo Opacity"
       };
       const scratchCtx = scratchCanvas.getContext("2d", { willReadFrequently: true });
       const loaderCanvas = document.getElementById("loaderCanvas");
@@ -2891,7 +2913,7 @@
       }
 
       function updateControlsFromSettings() {
-        if (mapFxMode && activeSourceMode === 'clone' && cameraCloneSlots[activeCloneSlot]) syncSettingsFromMapFxTarget();
+        if (shouldTargetFrameFxControls()) syncSettingsFromMapFxTarget();
         Object.entries(settings).forEach(([key, value]) => {
           const el = document.querySelector(`[data-setting="${key}"]`);
           if (!el) return;
@@ -2910,6 +2932,7 @@
         updateMapBackgroundButton();
         updateMapFxButton();
         updateSwapMediaButton();
+        updateDemoLayerButtons();
         updateLiveCameraButton();
       }
 
@@ -3272,9 +3295,27 @@
         return MAPFX_VISUAL_KEYS.has(key);
       }
 
+      function hasMappedFrames() {
+        return cameraCloneSlots.some(Boolean);
+      }
+
+      function ensureKeyboardFrameTarget(reason = "frame shortcut") {
+        if (activeSourceMode === 'clone' && cameraCloneSlots[activeCloneSlot]) return true;
+        const index = cameraCloneSlots.findIndex(Boolean);
+        if (index === -1) return false;
+        activateCameraClone(index);
+        keyboardIntentContext = 'frame';
+        showShortcutHUD('Frame Target', `Frame ${index + 1}`, null, true);
+        return true;
+      }
+
+      function shouldTargetFrameFxControls() {
+        return !!(activeSourceMode === 'clone' && cameraCloneSlots[activeCloneSlot] && (frameFxAutoTarget || mapFxMode || mapEditorVisible || keyboardMapMode));
+      }
+
       function syncSettingsFromMapFxTarget() {
         const slot = getActiveFrameSlot();
-        if (!mapFxMode || !slot) return;
+        if (!shouldTargetFrameFxControls() || !slot) return;
         const state = ensureFrameVisualState(slot);
         settings.primaryEnabled = !!state.primaryEnabled;
         settings.secondaryEnabled = !!state.secondaryEnabled;
@@ -3293,22 +3334,30 @@
 
       function applyMapFxSetting(key, rawValue, pushHistory = true, livePreview = false) {
         const slot = getActiveFrameSlot();
-        if (!mapFxMode || !slot || !isMapFxSetting(key)) return false;
+        if (!shouldTargetFrameFxControls() || !slot || !isMapFxSetting(key)) return false;
         if (pushHistory && !livePreview) pushMapHistory();
         const state = ensureFrameVisualState(slot);
         const value = typeof settings[key] === 'number' ? Number(rawValue) : rawValue;
-        state[key] = value;
-        if (key === 'primaryEffect' || key === 'secondaryEffect') state.enabled = true;
-        if (key === 'primaryEnabled' || key === 'secondaryEnabled') {
+        if (key === 'primaryEffect' || key === 'secondaryEffect') {
+          const layer = key === 'primaryEffect' ? 'primary' : 'secondary';
+          const preset = buildEffectPreset(String(value), layer);
+          Object.entries(preset).forEach(([presetKey, presetValue]) => {
+            if (isMapFxSetting(presetKey)) state[presetKey] = presetValue;
+          });
           state.enabled = !!(state.primaryEnabled || state.secondaryEnabled);
-        } else if (state.primaryEnabled || state.secondaryEnabled) {
-          state.enabled = true;
+        } else {
+          state[key] = value;
+          if (key === 'primaryEnabled' || key === 'secondaryEnabled') {
+            state.enabled = !!(state.primaryEnabled || state.secondaryEnabled);
+          } else if (state.primaryEnabled || state.secondaryEnabled) {
+            state.enabled = true;
+          }
         }
-        settings[key] = value;
+        syncSettingsFromMapFxTarget();
         updateEffectToggleButtons();
         updateFrameFxControls();
         lastFrameTime = 0;
-        if (!livePreview) refreshMapView();
+        if (!livePreview) refreshMapView(false);
         return true;
       }
 
@@ -3497,8 +3546,8 @@
         if (secondary) secondary.value = state.secondaryEffect || "normal";
         if (status) {
           status.textContent = slot
-            ? `Frame ${activeCloneSlot + 1} visuals: ${state.enabled ? "ON" : "OFF"}. Primary ${state.primaryEffect || "normal"}, secondary ${state.secondaryEffect || "normal"}.${mapFxMode ? " MapFX is targeting this frame." : ""}`
-            : "Select a mapped frame first. Frame FX stay off unless you assign them, which helps keep multiple frames responsive.";
+            ? `Frame ${activeCloneSlot + 1} visuals: ${state.enabled ? "ON" : "OFF"}. Primary ${state.primaryEffect || "normal"}, secondary ${state.secondaryEffect || "normal"}.${mapFxMode ? " Frame-target controls are active for this frame." : ""}`
+            : "Select a mapped frame first. Select a mapped frame to target it. With Auto Frame Targeting on, the main effect controls apply to the selected frame.";
         }
         updateFrameLayerControls();
       }
@@ -3794,7 +3843,7 @@
         activeCloneSlot = index;
         clearHiddenMediaElements();
         applyProjectionStatePayload(cameraCloneSlots[index].projectionState || getDefaultCloneProjection(index));
-        if (mapFxMode) syncSettingsFromMapFxTarget();
+        if (shouldTargetFrameFxControls()) syncSettingsFromMapFxTarget();
         updateMediaSlotButtons();
         updateCloneButtons();
         updateFrameFxControls();
@@ -5040,6 +5089,9 @@
         resetNormalButton: ['Normal Reset', 'Returns the visual output to a clean normal camera state with primary and secondary effects off, mapping cleared, and the core source view reset.'],
         hideUIButton: ['Hide UI', 'Hides the interface so the display becomes mainly the live visual/projection output. Keyboard shortcuts can still work while the UI is hidden.'],
         randomizeButton: ['Dice', 'Randomizes parts of the visual look for quick experimentation. Use it when you want a new texture, glow, trail, or effect direction without manually moving every slider.'],
+        demoLayerToggleButton: ['Demo Layer', 'Turns the selected demo visual on as a blendable filler/overlay layer that can work with the live camera, effects, and mapped frames.'],
+        demoSoloButton: ['Demo Solo', 'Temporarily fills the display with only the selected demo visual. Use it when you want a clean animated filler screen.'],
+        demoVisualSelect: ['Demo Visual Mode', 'Chooses one of the five demo visual backgrounds. The original mode is preserved and four additional modes are available.'],
         appBugButton: ['Report a Bug', 'Opens a bug report email addressed to the saved MARZapps address so testers can report issues.'],
         collapseButton: ['Collapse Controls', 'Collapses the Controls window to free up space on the projection display. Use the small window controls or the header buttons to bring it back.'],
         dockResetWindowButton: ['Reset Window', 'Restores the Controls window to a safe default position and size if it gets moved off screen or becomes hard to reach.'],
@@ -5597,6 +5649,8 @@
         document.getElementById("homeButton").addEventListener("click", showHome);
         document.getElementById("startButton").addEventListener("click", () => showGuide("live"));
         document.getElementById("demoButton").addEventListener("click", startDemo);
+        document.getElementById("demoLayerToggleButton")?.addEventListener("click", () => toggleDemoLayer());
+        document.getElementById("demoSoloButton")?.addEventListener("click", () => toggleDemoSolo());
         document.getElementById("loaderPreviewButton").addEventListener("click", () => playLoader(() => {}));
         updateCloneButtons();
       }
@@ -6084,6 +6138,52 @@
         }
       }
 
+      function updateDemoLayerButtons() {
+        const toggle = document.getElementById('demoLayerToggleButton');
+        const solo = document.getElementById('demoSoloButton');
+        if (toggle) {
+          toggle.textContent = settings.demoLayerEnabled ? 'Demo Layer On' : 'Demo Layer Off';
+          toggle.classList.toggle('on', !!settings.demoLayerEnabled);
+          toggle.classList.toggle('off', !settings.demoLayerEnabled);
+        }
+        if (solo) {
+          solo.textContent = settings.demoSolo ? 'Demo Solo On' : 'Demo Solo';
+          solo.classList.toggle('on', !!settings.demoSolo);
+          solo.classList.toggle('off', !settings.demoSolo);
+        }
+      }
+
+      function toggleDemoLayer(force = null) {
+        const next = typeof force === 'boolean' ? force : !settings.demoLayerEnabled;
+        applySetting('demoLayerEnabled', next);
+        if (next) applySetting('demoSolo', false, false);
+        showToast(next ? 'Demo layer on. It can blend with camera, effects, and mapped frames.' : 'Demo layer off.');
+      }
+
+      function toggleDemoSolo(force = null) {
+        const next = typeof force === 'boolean' ? force : !settings.demoSolo;
+        applySetting('demoSolo', next);
+        if (next) applySetting('demoLayerEnabled', true, false);
+        showToast(next ? 'Demo solo on. Demo visual fills the display.' : 'Demo solo off.');
+      }
+
+      function drawDemoLayer(now, mode = 'overlay') {
+        if (!settings.demoLayerEnabled && !settings.demoSolo) return;
+        if (demoLayerCanvas.width !== canvas.width || demoLayerCanvas.height !== canvas.height) {
+          demoLayerCanvas.width = canvas.width;
+          demoLayerCanvas.height = canvas.height;
+        }
+        demoLayerCtx.setTransform(1, 0, 0, 1, 0, 0);
+        demoLayerCtx.globalCompositeOperation = 'source-over';
+        demoLayerCtx.globalAlpha = 1;
+        drawDemoSource(demoLayerCtx, canvas.width, canvas.height, now);
+        ctx.save();
+        ctx.globalAlpha = mode === 'solo' ? 1 : clamp(Number(settings.demoOpacity ?? 0.44), 0, 1);
+        ctx.globalCompositeOperation = mode === 'background' ? 'source-over' : 'screen';
+        ctx.drawImage(demoLayerCanvas, 0, 0, canvas.width, canvas.height);
+        ctx.restore();
+      }
+
       function drawFrame(now) {
         if (!isRunning) return;
         requestAnimationFrame(drawFrame);
@@ -6094,11 +6194,16 @@
         frameCount++;
         updateAudio(now);
         const frame = prepareSourceFrame(now);
-        if (settings.mapEnabled) {
+        if (settings.demoSolo) {
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          drawDemoLayer(now, 'solo');
+        } else if (settings.mapEnabled) {
           ctx.setTransform(1, 0, 0, 1, 0, 0);
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.fillStyle = '#000';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
+          if (settings.demoLayerEnabled) drawDemoLayer(now, 'background');
           const bgSource = getBackgroundSourceElement();
           if (bgSource) drawSourceCover(bgSource, mapBackgroundSource?.visualState || null);
         } else {
@@ -6112,6 +6217,7 @@
             if (settings.secondaryEnabled) drawEffect(settings.secondaryEffect, frame, settings.secondaryMix);
             drawVignette(frame);
           }
+          if (settings.demoLayerEnabled) drawDemoLayer(now, 'overlay');
         }
         syncActiveProjectionState();
         renderCameraCloneLayers();
@@ -6660,7 +6766,14 @@
       }
 
       function isMapControlContext() {
-        return !!(keyboardMapMode || mapEditorVisible || activeSourceMode === "clone");
+        return !!(keyboardMapMode || mapEditorVisible || activeSourceMode === "clone" || hasMappedFrames());
+      }
+
+      function prepareFrameShortcutContext(action = 'frame') {
+        if (!hasMappedFrames()) return false;
+        ensureKeyboardFrameTarget(action);
+        keyboardIntentContext = 'frame';
+        return true;
       }
 
       function smoothSetSetting(key, target, options = {}) {
@@ -7556,7 +7669,8 @@
         const effect = EFFECTS[index];
         if (!effect) return;
         applySetting(secondary ? "secondaryEffect" : "primaryEffect", effect.id);
-        showToast(`${secondary ? "Secondary" : "Primary"}: ${effect.name}`);
+        const target = shouldTargetFrameFxControls() ? ` → Frame ${activeCloneSlot + 1}` : '';
+        showToast(`${secondary ? "Secondary" : "Primary"}: ${effect.name}${target}`);
       }
 
       function hideShortcutHUD() {
@@ -7626,7 +7740,7 @@
           el.textContent = "Frame Lock is on: the selected frame stays fixed in place. Turn Frame Lock off to drag or reshape it. You can still adjust content with buttons and keyboard controls.";
           return;
         }
-        const suffix = mapFxMode ? ' MapFX is on: with Edit Off, tap a box to make the main controls target that box.' : '';
+        const suffix = mapFxMode ? ' Frame controls auto-target the selected box. MapFX tap-to-target is on.' : '';
         el.textContent = touchFeedMode
           ? `Slide Feed is on: drag inside the selected mapped box to pan the video/photo/live feed inside it. Tap away to return to Drag Frame mode.${suffix}`
           : `Drag Frame is on: drag the mapped box around while the content orientation stays locked. Tap the selected frame once to switch into Slide Feed.${suffix}`;
@@ -7686,6 +7800,15 @@
         activeShortcutKey = key;
         activeShortcutSetting = setting;
         focusSliderBySetting(setting, true);
+        return true;
+      }
+
+      function setActiveShortcutForSetting(setting, label = '') {
+        if (!setting) return false;
+        activeShortcutKey = `setting:${setting}`;
+        activeShortcutSetting = setting;
+        const range = focusSliderBySetting(setting, true);
+        if (!range) showShortcutHUD(label || sliderShortcutNames[setting] || setting, formatValue(setting, Number(settings[setting] || 0)), null, false);
         return true;
       }
 
@@ -7806,11 +7929,28 @@
             toggleSwapMediaMode();
             flashShortcutAction('Swap Media Mode', swapMediaMode ? 'On' : 'Off');
             return true;
+          case 'y':
+            toggleDemoLayer();
+            flashShortcutAction('Demo Layer', settings.demoLayerEnabled ? 'On' : 'Off');
+            return true;
+          case 'p':
+            toggleDemoSolo();
+            flashShortcutAction('Demo Solo', settings.demoSolo ? 'On' : 'Off');
+            return true;
           default:
             return false;
         }
       }
 
+      /* MARZVIEW_SHORTCUT_AUDIT_2026
+         Resolved conflicts:
+         - Shift+/ was colliding with Shift+? because both are the same physical combo on many keyboards.
+           Demo Opacity now uses the standalone '-' slider shortcut.
+         - C was opening Frame Pan even when no mapped frame existed, blocking the Camera panel.
+           C now pans only in mapped-frame context; otherwise it opens Camera panel.
+         Priority model:
+         - Cmd/Ctrl combos first, shifted action shortcuts next, mapped-frame hold shortcuts next, slider shortcuts next, panel/global shortcuts last.
+      */
       function setupKeyboard() {
         const handleKeyDown = event => {
           const isTyping = isTextEntryTarget(event.target);
@@ -7868,28 +8008,28 @@
             return;
           }
 
-          if (isMapControlContext() && key === 'd' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          if ((isMapControlContext() || hasMappedFrames()) && key === 'd' && !event.ctrlKey && !event.metaKey && !event.altKey && prepareFrameShortcutContext('point')) {
             keyboardMapCropHeld = true;
             showMapShortcutHUD("Move Point", "Hold + arrows");
             event.preventDefault();
             return;
           }
 
-          if (isMapControlContext() && key === 'm' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          if ((isMapControlContext() || hasMappedFrames()) && key === 'm' && !event.ctrlKey && !event.metaKey && !event.altKey && prepareFrameShortcutContext('move')) {
             keyboardMapMoveHeld = true;
             showMapShortcutHUD("Move Whole Frame", "Hold + arrows");
             event.preventDefault();
             return;
           }
 
-          if (isMapControlContext() && (key === 'o') && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          if ((isMapControlContext() || hasMappedFrames()) && (key === 'o') && !event.ctrlKey && !event.metaKey && !event.altKey && prepareFrameShortcutContext('add point')) {
             event.preventDefault();
             keyboardMapMode = true;
             keyboardAddMapPoint();
             return;
           }
 
-          if (isMapControlContext() && (key === 'backspace' || key === 'delete') && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          if ((isMapControlContext() || hasMappedFrames()) && (key === 'backspace' || key === 'delete') && !event.ctrlKey && !event.metaKey && !event.altKey && prepareFrameShortcutContext('remove point')) {
             event.preventDefault();
             keyboardMapMode = true;
             keyboardRemoveMapPoint();
@@ -7908,14 +8048,15 @@
             return;
           }
 
-          if ((key === 'c' || (isMapControlContext() && key === 'v')) && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
+
+          if (((key === 'c' && (isMapControlContext() || hasMappedFrames())) || (key === 'v' && isMapControlContext())) && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey && prepareFrameShortcutContext('pan')) {
             keyboardMapPanHeld = true;
-            showMapShortcutHUD(isMapControlContext() ? "Frame Pan" : "Camera/Feed Pan", "Hold + arrows");
+            showMapShortcutHUD("Frame Pan", "Hold + arrows");
             event.preventDefault();
             return;
           }
 
-          if (isMapControlContext() && key === 'x' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          if ((isMapControlContext() || hasMappedFrames()) && key === 'x' && !event.ctrlKey && !event.metaKey && !event.altKey && prepareFrameShortcutContext('squish')) {
             keyboardMapSquishHeld = true;
             showMapShortcutHUD("Frame Squish", "Hold + arrows");
             event.preventDefault();
@@ -7923,6 +8064,7 @@
           }
 
           if (key === 'z' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            if (hasMappedFrames()) prepareFrameShortcutContext('zoom');
             keyboardZoomHeld = true;
             showMapShortcutHUD(isMapControlContext() ? "Frame Zoom + Pan" : "Camera/Feed Zoom + Pan", "Use +/- and arrows");
             event.preventDefault();
