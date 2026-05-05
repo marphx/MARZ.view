@@ -1903,7 +1903,7 @@
             <button id="liveCamerasButton" class="ghostButton">Live Cams On</button>
             <button id="snapLiveBoxButton" class="ghostButton">Snap Live Box</button>
             <button id="duplicateFrameButton" class="ghostButton">Duplicate Frame</button>
-            <button id="reshapeFrameButton" class="ghostButton">Reshape/Warp</button>
+            <button id="reshapeFrameButton" class="ghostButton">Contour Warp</button>
           </div>
           <div class="buttonGrid three">
             <button id="frameDragButton" class="ghostButton active">Drag Frame</button>
@@ -1930,10 +1930,10 @@
             <button id="shapeDiamondButton" class="ghostButton shapeButton">Diamond</button>
             <button id="shapeCustomButton" class="ghostButton shapeButton customShape">Custom</button>
           </div>
-          <div class="sectionTitle" style="margin-top:14px;">Apply mode <span>crop or contort</span></div>
+          <div class="sectionTitle" style="margin-top:14px;">Apply mode <span>contour or warp</span></div>
           <div class="buttonGrid">
-            <button id="mapModeMaskButton" class="ghostButton modeButton">Mask Outside</button>
-            <button id="mapModeWarpButton" class="ghostButton modeButton">Contort to Shape</button>
+            <button id="mapModeMaskButton" class="ghostButton modeButton">Contour Mask</button>
+            <button id="mapModeWarpButton" class="ghostButton modeButton">Contour Warp</button>
           </div>
           <div class="sectionTitle" style="margin-top:14px;">Custom media <span>upload photo or video slots</span></div>
           <input id="mediaUpload" type="file" accept="image/*,video/*,.gif" multiple hidden />
@@ -2357,6 +2357,8 @@
       const frameFxCtx = frameFxCanvas.getContext("2d", { willReadFrequently: true });
       const frameFxWorkCanvas = document.createElement("canvas");
       const frameFxWorkCtx = frameFxWorkCanvas.getContext("2d", { willReadFrequently: true });
+      const warpSourceCanvas = document.createElement("canvas");
+      const warpSourceCtx = warpSourceCanvas.getContext("2d", { willReadFrequently: false });
 
       const sliderShortcutMap = {
         q: "primaryMix",
@@ -4607,10 +4609,8 @@
         syncActiveProjectionState();
         lastFrameTime = 0;
         renderMapOverlay();
-        requestAnimationFrame(time => {
-          if (isRunning && !isPaused) drawFrame(time);
-        });
-        showToast(mode === 'mask' ? 'Map mode: mask outside the frame.' : 'Warp mode: true media warp into the mapped frame.');
+        lastFrameTime = 0;
+        showToast(mode === 'mask' ? 'Map mode: mask outside the frame.' : 'Contour Warp mode: media is stabilized and warped into the mapped frame.');
       }
 
       function activateMapPanel() {
@@ -4942,7 +4942,7 @@
         liveCamerasButton: ['Live Cameras On/Off', 'Hides or restores all live camera feeds while leaving uploaded photo/video/GIF mapped frames visible. Useful when you want to work with media frames without the live camera filling the background.'],
         snapLiveBoxButton: ['Snap Live Box', 'Instantly places the current live camera into its own mapped box that is ready to drag, resize, crop, warp, duplicate, or layer.'],
         duplicateFrameButton: ['Duplicate Frame', 'Duplicates the selected mapped frame into another frame slot, preserving its source, shape, opacity, layer style, and fit settings with a slight offset.'],
-        reshapeFrameButton: ['Reshape / Warp', 'Turns on mapping, switches the selected frame into custom warp editing, and lets you drag points to contour the frame shape.'],
+        reshapeFrameButton: ['Contour Warp', 'Turns on mapping, switches the selected frame into custom warp editing, and lets you drag points to contour the frame shape.'],
         frameDragButton: ['Drag Frame', 'Sets touch interaction so dragging moves the mapped box while the content inside stays locked in orientation.'],
         slideFeedButton: ['Slide Feed', 'Sets touch interaction so dragging inside the selected mapped box pans the video/photo/live feed inside the frame instead of moving the frame itself.'],
         frameLockButton: ['Frame Lock', 'Locks the selected mapped frame in place so it cannot be dragged or reshaped accidentally. It uses its own purple color so you can recognize it quickly.'],
@@ -5276,6 +5276,11 @@
           return;
         }
         pushMapHistory();
+        const slot = cameraCloneSlots[activeCloneSlot];
+        const source = getCloneSourceElement(slot);
+        if (source && source.tagName && source.tagName.toLowerCase() === "video") {
+          try { source.play?.(); } catch (error) {}
+        }
         settings.mapEnabled = true;
         settings.mapMode = "warp";
         const handles = getMapHandlePoints();
@@ -5286,12 +5291,15 @@
         }));
         settings.mapShape = "custom";
         mapEditorVisible = true;
+        keyboardMapMode = true;
+        keyboardMapSelectedIndex = Math.min(keyboardMapSelectedIndex, Math.max(0, mapCustomPoints.length - 1));
         mapCanvas.classList.add("editing");
         syncActiveProjectionState();
         setTouchFeedMode(false, false);
         updateControlsFromSettings();
+        lastFrameTime = 0;
         renderMapOverlay();
-        showToast("Reshape/Warp ready: drag points to contour the selected frame.");
+        showToast("Contour Warp ready. Drag dots or use D + arrows. Videos use stabilized warp playback.");
       }
 
       function setupControls() {
@@ -5412,7 +5420,7 @@
         document.getElementById("shapeDiamondButton").addEventListener("click", () => setMapShape("diamond"));
         document.getElementById("shapeCustomButton").addEventListener("click", () => setMapShape("custom"));
         document.getElementById("mapModeMaskButton").addEventListener("click", () => setMapMode("mask"));
-        document.getElementById("mapModeWarpButton").addEventListener("click", () => setMapMode("warp"));
+        document.getElementById("mapModeWarpButton").addEventListener("click", reshapeActiveFrameNow);
         document.getElementById("mapZoomOutButton").addEventListener("click", () => adjustMapContentZoom(-0.08));
         document.getElementById("mapZoomInButton").addEventListener("click", () => adjustMapContentZoom(0.08));
         document.getElementById("touchFeedButton").addEventListener("click", toggleTouchFeedMode);
@@ -6076,6 +6084,46 @@
         ctx.restore();
       }
 
+      function isVideoLikeSource(source) {
+        const tag = (source && source.tagName || "").toLowerCase();
+        return tag === "video";
+      }
+
+      function prepareWarpSource(source, crop, preferFast = false) {
+        const aspect = crop.sw / Math.max(1, crop.sh);
+        const maxSide = preferFast ? 360 : 560;
+        let w, h;
+        if (aspect >= 1) {
+          w = Math.min(maxSide, Math.max(96, Math.round(crop.sw)));
+          h = Math.max(72, Math.round(w / aspect));
+        } else {
+          h = Math.min(maxSide, Math.max(96, Math.round(crop.sh)));
+          w = Math.max(72, Math.round(h * aspect));
+        }
+        warpSourceCanvas.width = Math.max(1, w);
+        warpSourceCanvas.height = Math.max(1, h);
+        warpSourceCtx.setTransform(1, 0, 0, 1, 0, 0);
+        warpSourceCtx.clearRect(0, 0, w, h);
+        warpSourceCtx.imageSmoothingEnabled = true;
+        try {
+          warpSourceCtx.drawImage(source, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, w, h);
+        } catch (error) {
+          return { source, crop };
+        }
+        return {
+          source: warpSourceCanvas,
+          crop: { sx: 0, sy: 0, sw: w, sh: h }
+        };
+      }
+
+      function recommendedWarpMesh(source, box, state) {
+        if (isVideoLikeSource(source)) return 1;
+        if (state.visualState && state.visualState.enabled) return 1;
+        const maxDim = Math.max(box.w, box.h);
+        if (maxDim > 900) return 2;
+        return 2;
+      }
+
       function drawWarpedImageToQuad(source, crop, quad, rows = 12, cols = 12) {
         for (let y = 0; y < rows; y++) {
           const v0 = y / rows;
@@ -6102,6 +6150,7 @@
 
       function renderProjectionInstance(source, state, clearCanvas = false) {
         if (!source || !state || !state.mapEnabled) return;
+        const rawSource = source;
         source = renderFrameVisualSource(source, state.visualState || null);
         const points = getProjectionPointsPixelsForState(state);
         const box = getProjectionBBoxPixelsForState(state);
@@ -6118,8 +6167,10 @@
         if (state.mapMode === 'warp') {
           const quad = getWarpQuadForState(state, points, box);
           if (quad) {
-            const mesh = Math.max(6, Math.min(16, Math.round(Math.max(box.w, box.h) / 80)));
-            drawWarpedImageToQuad(source, crop, quad, mesh, mesh);
+            const fastWarp = isVideoLikeSource(rawSource) || isVideoLikeSource(source);
+            const prepared = prepareWarpSource(source, crop, fastWarp);
+            const mesh = recommendedWarpMesh(rawSource, box, state);
+            drawWarpedImageToQuad(prepared.source, prepared.crop, quad, mesh, mesh);
           } else {
             ctx.drawImage(source, crop.sx, crop.sy, crop.sw, crop.sh, box.x, box.y, box.w, box.h);
           }
@@ -6151,15 +6202,11 @@
         }
       }
 
-      function refreshMapView() {
+      function refreshMapView(showMessage = true) {
         syncActiveProjectionState();
         renderMapOverlay();
         lastFrameTime = 0;
-        requestAnimationFrame(time => {
-          if (isRunning && !isPaused) drawFrame(time);
-          else renderMapOverlay();
-        });
-        showToast("Map view refreshed.");
+        if (showMessage) showToast("Map view refreshed.");
       }
 
       function updateMapGuideToggleButton() {
@@ -7436,7 +7483,7 @@
             return true;
           case 'r':
             reshapeActiveFrameNow();
-            flashShortcutAction('Reshape / Warp', 'Ready');
+            flashShortcutAction('Contour Warp', 'Ready');
             return true;
           case 'k':
             toggleActiveFrameLock();
